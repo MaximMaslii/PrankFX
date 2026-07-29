@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "frontend",
+    "name": "PrankFX",
     "slug": "frontend",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,7 +10,12 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.emergent.effectstudiopro.h1w535"
+      "bundleIdentifier": "com.emergent.effectstudiopro.h1w535",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Take photos to apply cinematic effects",
+        "NSPhotoLibraryUsageDescription": "Pick photos to transform with AI",
+        "NSPhotoLibraryAddUsageDescription": "Save your cinematic creations"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +23,13 @@
         "backgroundColor": "#000000"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.emergent.effectstudiopro.h1w535"
+      "package": "com.emergent.effectstudiopro.h1w535",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -27,6 +38,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-localization",
       [
         "expo-splash-screen",
         {
@@ -34,6 +46,19 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#000000"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "PrankFX needs access to your photos to apply cinematic effects.",
+          "cameraPermission": "PrankFX needs camera access to capture photos for AI effects."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "PrankFX needs camera access to capture photos for AI effects."
         }
       ]
     ],

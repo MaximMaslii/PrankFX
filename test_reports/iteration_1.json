@@ -1,0 +1,44 @@
+{
+  "summary": "PrankFX backend fully tested via public preview URL. All 28 pytest cases passed (100%) across health, email/password auth, effects catalog, premium gating, mock subscription flow, real Nano Banana AI generation, project CRUD with favorites+search, and account deletion.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/auth/logout", "issue": "Only deletes session_token from user_sessions. JWTs issued via email/password login remain valid until expiry (30 days). Documented via test — behavior is by design but frontend must discard JWT client-side. Consider a token blacklist if stronger logout semantics are required."},
+      {"endpoint": "POST /api/auth/register", "issue": "email-validator library rejects TLDs that RFC 2606 marks as reserved (e.g. `.test`, `.example`, `.invalid`). Not a bug, but worth noting for callers writing tests; use `example.com`-style domains."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/conftest.py",
+    "/app/backend/tests/test_prankfx_api.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "None blocking. Optional: If stricter logout semantics are needed, invalidate JWTs server-side (blacklist or short exp + refresh token).",
+    "Optional: In production, replace mock subscription with real Stripe checkout (STRIPE_SECRET_KEY currently empty in .env)."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 528 lines — nearing the 700-line split threshold but still acceptable. Consider splitting auth, subscription, generate, projects into routers as feature set grows.",
+    "MongoDB _id is correctly excluded via find projections everywhere ({\"_id\": 0}). Verified in tests.",
+    "Password hashing uses bcrypt with gensalt() — good.",
+    "get_current_user cleanly supports BOTH JWT and Emergent Google session_token on the same /api/auth/me endpoint — verified via test_me_with_jwt (Google session flow not exercised because it requires a real Emergent session_id).",
+    "Premium gating logic in _is_effect_allowed is correct: face_effects tier unlocks only face; ultimate unlocks everything — verified via TestSubscription.test_face_tier_cannot_access_ultimate_effect (402 for vehicle).",
+    "Real Nano Banana call succeeded end-to-end in ~9-12s with a 256x256 PNG using model `gemini-3.1-flash-image-preview` — result_image base64 returned and persisted to Mongo when save_to_history=true.",
+    "Effects catalog properly hides raw prompts from public /api/effects response — verified."
+  ],
+  "updated_files": [
+    "/app/backend/tests/conftest.py (new)",
+    "/app/backend/tests/test_prankfx_api.py (new)"
+  ],
+  "success_rate": {"backend": "100% (28/28)", "frontend": "not tested (backend-only request)"},
+  "seed_data_creation": "Tests create ephemeral TEST_ prefixed users and delete them (via DELETE /api/auth/account) at end of each class. One real AI-generated project was created for demo user and then deleted in test_delete_project. Demo user premium_tier ends set to `ultimate` (mock-activated during AI test).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Run `python -m pytest backend/tests/test_prankfx_api.py -n 0 --junitxml=/app/test_reports/pytest/pytest_results.xml` (must pass `-n 0` to override the pytest.ini `-n 2 --dist loadscope` because several tests share class-level state and would race under parallel workers). Email domain must be non-reserved (use `.com`, NOT `.test`). AI generation test takes 10-15s; timeout is 180s.",
+  "rca_of_issue": "N/A — no bugs found."
+}
