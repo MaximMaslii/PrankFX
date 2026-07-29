@@ -31,7 +31,7 @@ export default function Register() {
     setSubmitting(true);
     try {
       await registerWithEmail(email.trim(), password, name.trim() || undefined);
-      router.replace("/(tabs)/home");
+      router.replace("/home");
     } catch (e: any) {
       Toast.error(e?.message || t("error_generic"));
     } finally {

@@ -33,7 +33,7 @@ export default function Login() {
     setSubmitting(true);
     try {
       await loginWithEmail(email.trim(), password);
-      router.replace("/(tabs)/home");
+      router.replace("/home");
     } catch (e: any) {
       Toast.error(e?.message || t("error_generic"));
     } finally {
@@ -63,7 +63,7 @@ export default function Login() {
         return;
       }
       await loginWithGoogleSession(session_id);
-      router.replace("/(tabs)/home");
+      router.replace("/home");
     } catch (e: any) {
       Toast.error(e?.message || t("error_generic"));
     } finally {

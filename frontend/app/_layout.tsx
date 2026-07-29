@@ -43,7 +43,7 @@ function RootGate() {
         return;
       }
       if (onboarded && user && (inAuth || inOnboarding || !inTabs && segments.length === 0)) {
-        router.replace("/(tabs)/home");
+        router.replace("/home");
       }
     })();
   }, [user, bootLoading, segments, router]);

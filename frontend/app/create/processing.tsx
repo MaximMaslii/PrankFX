@@ -36,7 +36,7 @@ export default function Processing() {
     (async () => {
       if (!source?.base64 || !effect?.effect_id) {
         Toast.error("Missing image or effect");
-        router.replace("/(tabs)/home");
+        router.replace("/home");
         return;
       }
       try {
@@ -48,8 +48,8 @@ export default function Processing() {
         if (cancelled) return;
         const msg = e?.status === 402 ? t("premium_required") : (e?.message || t("error_generic"));
         Toast.error(msg);
-        if (e?.status === 402) router.replace("/(tabs)/premium");
-        else router.replace("/(tabs)/home");
+        if (e?.status === 402) router.replace("/premium");
+        else router.replace("/home");
       }
     })();
     return () => { cancelled = true; };

@@ -49,7 +49,7 @@ export default function PickEffect() {
 
   const pick = (e: any) => {
     if (isLocked(e.premium_tier)) {
-      router.push("/(tabs)/premium");
+      router.push("/premium");
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});

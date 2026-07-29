@@ -12,6 +12,7 @@ import { ProjectFull, ProjectsAPI } from "@/src/api/client";
 import { BeforeAfterSlider } from "@/src/components/BeforeAfterSlider";
 import { CreateFlow } from "@/src/utils/createFlow";
 import { toDataUri } from "@/src/utils/images";
+import { saveBase64ToGallery } from "@/src/utils/saveImage";
 import { Toast } from "@/src/components/Toast";
 import { FontSize, FontWeight, Radius, Spacing } from "@/src/theme/tokens";
 
@@ -69,9 +70,11 @@ export default function Result() {
     } catch { /* noop */ }
   };
 
-  const save = () => {
+  const save = async () => {
+    if (!project) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    Toast.success(t("saved"));
+    const name = `prankfx_${project.effect_id}_${Date.now()}.jpg`;
+    await saveBase64ToGallery(project.result_image, name);
   };
 
   const del = async () => {
@@ -79,7 +82,7 @@ export default function Result() {
     try {
       await ProjectsAPI.remove(project.project_id);
       Toast.success("Deleted");
-      router.replace("/(tabs)/history");
+      router.replace("/history");
     } catch (e: any) {
       Toast.error(e?.message || t("error_generic"));
     }
@@ -90,7 +93,7 @@ export default function Result() {
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 200 + insets.bottom, paddingHorizontal: Spacing.xl }}>
         {/* Header */}
         <View style={styles.headerRow}>
-          <Pressable testID="result-back" onPress={() => router.replace("/(tabs)/home")} style={styles.back}>
+          <Pressable testID="result-back" onPress={() => router.replace("/home")} style={styles.back}>
             <Ionicons name="chevron-back" size={26} color={colors.onSurface} />
           </Pressable>
           <Text style={[styles.title, { color: colors.onSurface }]}>{project?.effect_name || t("result_title")}</Text>

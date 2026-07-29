@@ -10,10 +10,11 @@ import * as Haptics from "expo-haptics";
 import { useTheme } from "@/src/theme/ThemeProvider";
 import { useI18n } from "@/src/i18n/I18nProvider";
 import { useAuth } from "@/src/auth/AuthProvider";
-import { CategoryItem, EffectsAPI, ProjectListItem, ProjectsAPI } from "@/src/api/client";
+import { CategoryItem, EffectItem, EffectsAPI, ProjectListItem, ProjectsAPI } from "@/src/api/client";
 import { CreateFlow } from "@/src/utils/createFlow";
 import { pickFromGallery, takePhoto } from "@/src/utils/picker";
 import { getEffectThumb, toDataUri } from "@/src/utils/images";
+import { COLLECTIONS, getDailyEffectId } from "@/src/utils/collections";
 import { FontSize, FontWeight, Radius, Spacing } from "@/src/theme/tokens";
 
 export default function Home() {
@@ -38,10 +39,22 @@ export default function Home() {
   useEffect(() => { load(); }, [load]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
+  const allEffects = useMemo(() => {
+    const map: Record<string, EffectItem & { category: string }> = {};
+    for (const c of categories) {
+      for (const e of c.effects) map[e.id] = { ...e, category: c.id };
+    }
+    return map;
+  }, [categories]);
+
+  const dailyEffect = useMemo(() => {
+    const id = getDailyEffectId();
+    return allEffects[id] || null;
+  }, [allEffects]);
+
   const popular = useMemo(() => {
-    // First 8 from the face category as the "popular" strip.
     const face = categories.find((c) => c.id === "face");
-    return face?.effects.slice(0, 8) || [];
+    return face?.effects.slice(0, 10) || [];
   }, [categories]);
 
   const startFlow = async (source: "camera" | "gallery") => {
@@ -52,9 +65,13 @@ export default function Home() {
     router.push("/create/pick-effect");
   };
 
-  const openPopular = (effectId: string, effectName: string) => {
-    CreateFlow.setEffect({ effect_id: effectId, effect_name: effectName, category: "face" });
-    router.push("/(tabs)/effects");
+  const openEffect = (effectId: string, effectName: string, category: string) => {
+    CreateFlow.setEffect({ effect_id: effectId, effect_name: effectName, category });
+    router.push("/create/pick-source");
+  };
+
+  const openCollection = (collectionId: string) => {
+    router.push({ pathname: "/collection", params: { id: collectionId } });
   };
 
   const onRefresh = async () => {
@@ -67,16 +84,16 @@ export default function Home() {
     <ScrollView
       testID="home-screen"
       style={{ backgroundColor: colors.surface }}
-      contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: 120 + insets.bottom }}
+      contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: 140 + insets.bottom }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.brand} />}
     >
       {/* Header */}
       <View style={styles.header}>
-        <View>
+        <View style={{ flex: 1 }}>
           <Text style={[styles.hi, { color: colors.onSurfaceTertiary }]}>{t("hi")}, {user?.name || "friend"} 👋</Text>
           <Text style={[styles.lead, { color: colors.onSurface }]}>{t("home_lead")}</Text>
         </View>
-        <Pressable testID="home-avatar" onPress={() => router.push("/(tabs)/settings")}
+        <Pressable testID="home-avatar" onPress={() => router.push("/settings")}
           style={[styles.avatar, { backgroundColor: colors.brand }]}
         >
           {user?.picture ? (
@@ -105,9 +122,40 @@ export default function Home() {
         />
       </View>
 
+      {/* Effect of the Day */}
+      {dailyEffect && (
+        <View style={{ marginTop: Spacing.xl, paddingHorizontal: Spacing.xl }}>
+          <View style={styles.sectionInline}>
+            <Ionicons name="flash" size={16} color={colors.brand} />
+            <Text style={[styles.sectionKicker, { color: colors.brand }]}>EFFECT OF THE DAY</Text>
+          </View>
+          <Pressable
+            testID={`daily-${dailyEffect.id}`}
+            onPress={() => openEffect(dailyEffect.id, dailyEffect.name, dailyEffect.category)}
+            style={[styles.daily, { backgroundColor: colors.surfaceSecondary }]}
+          >
+            <Image source={{ uri: getEffectThumb(dailyEffect.id, dailyEffect.category) }} style={StyleSheet.absoluteFillObject} />
+            <LinearGradient
+              colors={["rgba(0,0,0,0.1)", "rgba(0,0,0,0.55)", "rgba(0,0,0,0.9)"]}
+              locations={[0, 0.5, 1]}
+              style={StyleSheet.absoluteFillObject}
+            />
+            <View style={styles.dailyBottom}>
+              <View style={styles.dailyBadge}>
+                <Ionicons name="sparkles" size={12} color="#fff" />
+                <Text style={styles.dailyBadgeText}>Today{"\u2019"}s pick</Text>
+              </View>
+              <Text style={styles.dailyEmoji}>{dailyEffect.emoji}</Text>
+              <Text style={styles.dailyName}>{dailyEffect.name}</Text>
+              <Text style={styles.dailySub}>Tap to try this cinematic effect →</Text>
+            </View>
+          </Pressable>
+        </View>
+      )}
+
       {/* Premium banner */}
       {!user?.is_premium && (
-        <Pressable testID="home-premium-banner" onPress={() => router.push("/(tabs)/premium")}
+        <Pressable testID="home-premium-banner" onPress={() => router.push("/premium")}
           style={{ marginHorizontal: Spacing.xl, marginTop: Spacing.xl }}
         >
           <LinearGradient
@@ -127,8 +175,40 @@ export default function Home() {
         </Pressable>
       )}
 
+      {/* Discover — curated collections */}
+      <SectionHeader title="Discover" />
+      <FlatList
+        data={COLLECTIONS}
+        keyExtractor={(c) => c.id}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: Spacing.xl, gap: Spacing.md }}
+        renderItem={({ item }) => (
+          <Pressable
+            testID={`collection-${item.id}`}
+            onPress={() => openCollection(item.id)}
+            style={styles.collection}
+          >
+            <Image source={{ uri: item.hero }} style={StyleSheet.absoluteFillObject} />
+            <LinearGradient
+              colors={[item.accent[0] + "00", item.accent[0] + "AA", item.accent[1] + "F5"]}
+              locations={[0, 0.5, 1]}
+              style={StyleSheet.absoluteFillObject}
+            />
+            <View style={styles.collectionBottom}>
+              <View style={styles.collectionCount}>
+                <Ionicons name="sparkles" size={10} color="#fff" />
+                <Text style={styles.collectionCountText}>{item.effectIds.length} FX</Text>
+              </View>
+              <Text numberOfLines={1} style={styles.collectionTitle}>{item.title}</Text>
+              <Text numberOfLines={1} style={styles.collectionSub}>{item.subtitle}</Text>
+            </View>
+          </Pressable>
+        )}
+      />
+
       {/* Popular effects */}
-      <SectionHeader title={t("popular_effects")} action={t("view_all")} onAction={() => router.push("/(tabs)/effects")} />
+      <SectionHeader title={t("popular_effects")} action={t("view_all")} onAction={() => router.push("/effects")} />
       <FlatList
         data={popular}
         keyExtractor={(e) => e.id}
@@ -138,12 +218,12 @@ export default function Home() {
         renderItem={({ item }) => (
           <Pressable
             testID={`popular-${item.id}`}
-            onPress={() => openPopular(item.id, item.name)}
+            onPress={() => openEffect(item.id, item.name, "face")}
             style={[styles.popularCard, { backgroundColor: colors.surfaceSecondary }]}
           >
             <Image source={{ uri: getEffectThumb(item.id, "face") }} style={styles.popularImg} />
             <LinearGradient
-              colors={["transparent", "rgba(0,0,0,0.8)"]}
+              colors={["transparent", "rgba(0,0,0,0.85)"]}
               style={StyleSheet.absoluteFillObject}
             />
             <View style={styles.popularBottom}>
@@ -155,7 +235,7 @@ export default function Home() {
       />
 
       {/* Recent projects */}
-      <SectionHeader title={t("recent_projects")} action={projects.length > 0 ? t("view_all") : undefined} onAction={() => router.push("/(tabs)/history")} />
+      <SectionHeader title={t("recent_projects")} action={projects.length > 0 ? t("view_all") : undefined} onAction={() => router.push("/history")} />
       {projects.length === 0 ? (
         <View style={[styles.empty, { borderColor: colors.border }]}>
           <Ionicons name="film-outline" size={28} color={colors.onSurfaceTertiary} />
@@ -227,6 +307,15 @@ const styles = StyleSheet.create({
     shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 3,
   },
   actionText: { color: "#fff", fontSize: FontSize.lg, fontWeight: FontWeight.bold, marginTop: 8 },
+  sectionInline: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 },
+  sectionKicker: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, letterSpacing: 1.2 },
+  daily: { height: 220, borderRadius: Radius.lg, overflow: "hidden" },
+  dailyBottom: { position: "absolute", left: Spacing.lg, right: Spacing.lg, bottom: Spacing.lg },
+  dailyBadge: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", gap: 4, backgroundColor: "rgba(255,255,255,0.22)", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, marginBottom: 8 },
+  dailyBadgeText: { color: "#fff", fontSize: FontSize.xs, fontWeight: FontWeight.bold, letterSpacing: 0.5 },
+  dailyEmoji: { fontSize: 30 },
+  dailyName: { color: "#fff", fontSize: FontSize.xl2, fontWeight: FontWeight.heavy, letterSpacing: -0.4, marginTop: 4 },
+  dailySub: { color: "rgba(255,255,255,0.85)", fontSize: FontSize.sm, marginTop: 4 },
   premium: {
     flexDirection: "row", alignItems: "center", gap: Spacing.md,
     padding: Spacing.lg, borderRadius: Radius.lg,
@@ -239,6 +328,12 @@ const styles = StyleSheet.create({
   section: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: Spacing.xl, marginTop: Spacing.xl2, marginBottom: Spacing.md },
   sectionTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.bold, letterSpacing: -0.2 },
   sectionAction: { fontSize: FontSize.base, fontWeight: FontWeight.semibold },
+  collection: { width: 220, height: 140, borderRadius: Radius.lg, overflow: "hidden" },
+  collectionBottom: { position: "absolute", left: 12, right: 12, bottom: 12 },
+  collectionCount: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", gap: 4, backgroundColor: "rgba(0,0,0,0.35)", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, marginBottom: 8 },
+  collectionCountText: { color: "#fff", fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.4 },
+  collectionTitle: { color: "#fff", fontSize: FontSize.lg, fontWeight: FontWeight.heavy, letterSpacing: -0.2 },
+  collectionSub: { color: "rgba(255,255,255,0.85)", fontSize: FontSize.xs, marginTop: 2 },
   popularCard: { width: 140, height: 180, borderRadius: Radius.lg, overflow: "hidden" },
   popularImg: { width: "100%", height: "100%" },
   popularBottom: { position: "absolute", left: 10, right: 10, bottom: 10 },

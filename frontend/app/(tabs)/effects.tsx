@@ -57,7 +57,7 @@ export default function EffectsScreen() {
 
   const selectEffect = (e: { id: string; name: string; category: string; premium_tier: string }) => {
     if (isLocked(e.premium_tier)) {
-      router.push("/(tabs)/premium");
+      router.push("/premium");
       return;
     }
     Haptics.selectionAsync().catch(() => {});
