@@ -194,6 +194,8 @@ def user_to_out(u: dict) -> UserOut:
         provider=u.get("provider", "email"),
         is_premium=bool(u.get("is_premium", False)),
         premium_tier=u.get("premium_tier"),
+        free_credits_used=int(u.get("free_credits_used", 0)),
+        free_credits_total=int(u.get("free_credits_total", 1)),
         created_at=ensure_aware(u.get("created_at", now_utc())),
     )
 
@@ -206,6 +208,11 @@ async def startup():
     await db.user_sessions.create_index("session_token", unique=True)
     await db.user_sessions.create_index("expires_at", expireAfterSeconds=0)
     await db.projects.create_index([("user_id", 1), ("created_at", -1)])
+    # Backfill: give legacy users the free-credit fields.
+    await db.users.update_many(
+        {"free_credits_total": {"$exists": False}},
+        {"$set": {"free_credits_used": 0, "free_credits_total": 1}},
+    )
     logger.info("PrankFX backend started")
 
 
@@ -238,6 +245,8 @@ async def register(body: RegisterIn):
         "password_hash": hash_password(body.password),
         "is_premium": False,
         "premium_tier": None,
+        "free_credits_used": 0,
+        "free_credits_total": 1,
         "created_at": now_utc(),
     }
     await db.users.insert_one(doc)
@@ -303,6 +312,8 @@ async def google_session(body: GoogleSessionIn):
             "password_hash": None,
             "is_premium": False,
             "premium_tier": None,
+            "free_credits_used": 0,
+            "free_credits_total": 1,
             "created_at": now_utc(),
         }
         await db.users.insert_one(user_doc)
@@ -382,8 +393,16 @@ async def generate(body: GenerateIn, user: dict = Depends(get_current_user)):
     if not effect:
         raise HTTPException(status_code=404, detail="Unknown effect")
 
-    if not _is_effect_allowed(effect["premium_tier"], user):
-        raise HTTPException(status_code=402, detail=f"Premium required: {effect['premium_tier']}")
+    is_premium = bool(user.get("is_premium"))
+    tier_ok = _is_effect_allowed(effect["premium_tier"], user)
+    used = int(user.get("free_credits_used", 0))
+    total = int(user.get("free_credits_total", 1))
+    has_free_credit = (not is_premium) and used < total
+
+    if not tier_ok and not has_free_credit:
+        # Not premium AND no free credit left → gated.
+        reason = "credits_exhausted" if used >= total else f"premium_required:{effect['premium_tier']}"
+        raise HTTPException(status_code=402, detail=reason)
 
     if not EMERGENT_LLM_KEY:
         raise HTTPException(status_code=500, detail="AI key not configured")
@@ -400,6 +419,13 @@ async def generate(body: GenerateIn, user: dict = Depends(get_current_user)):
     except Exception as e:
         logger.exception("Nano banana failure")
         raise HTTPException(status_code=502, detail=f"AI generation failed: {e}")
+
+    # Consume a free credit only if the user is NOT premium AND is NOT tier-eligible via subscription.
+    if not is_premium and not tier_ok and has_free_credit:
+        await db.users.update_one(
+            {"user_id": user["user_id"]},
+            {"$inc": {"free_credits_used": 1}},
+        )
 
     project_id = make_project_id()
     doc = {
@@ -515,6 +541,18 @@ async def cancel(user: dict = Depends(get_current_user)):
         {"$set": {"is_premium": False, "premium_tier": None}},
     )
     return {"ok": True}
+
+
+@api.get("/subscription/credits")
+async def get_credits(user: dict = Depends(get_current_user)):
+    fresh = await db.users.find_one({"user_id": user["user_id"]}, {"_id": 0, "password_hash": 0})
+    return {
+        "is_premium": bool(fresh.get("is_premium")),
+        "premium_tier": fresh.get("premium_tier"),
+        "free_credits_used": int(fresh.get("free_credits_used", 0)),
+        "free_credits_total": int(fresh.get("free_credits_total", 1)),
+        "free_credits_remaining": max(0, int(fresh.get("free_credits_total", 1)) - int(fresh.get("free_credits_used", 0))),
+    }
 
 
 # Include router and CORS

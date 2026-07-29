@@ -46,10 +46,15 @@ export default function Processing() {
         router.replace({ pathname: "/create/result", params: { pid: r.project_id } });
       } catch (e: any) {
         if (cancelled) return;
-        const msg = e?.status === 402 ? t("premium_required") : (e?.message || t("error_generic"));
+        if (e?.status === 402) {
+          // Free credit used up OR premium-tier gate — bounce to home which
+          // shows the paywall modal.
+          router.replace({ pathname: "/home", params: { paywall: "1" } });
+          return;
+        }
+        const msg = e?.message || t("error_generic");
         Toast.error(msg);
-        if (e?.status === 402) router.replace("/premium");
-        else router.replace("/home");
+        router.replace("/home");
       }
     })();
     return () => { cancelled = true; };

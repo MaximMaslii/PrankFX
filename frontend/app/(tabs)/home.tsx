@@ -3,18 +3,19 @@ import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
 import { useTheme } from "@/src/theme/ThemeProvider";
 import { useI18n } from "@/src/i18n/I18nProvider";
 import { useAuth } from "@/src/auth/AuthProvider";
-import { CategoryItem, EffectItem, EffectsAPI, ProjectListItem, ProjectsAPI } from "@/src/api/client";
+import { CategoryItem, CreditsInfo, EffectItem, EffectsAPI, ProjectListItem, ProjectsAPI, SubAPI } from "@/src/api/client";
 import { CreateFlow } from "@/src/utils/createFlow";
 import { pickFromGallery, takePhoto } from "@/src/utils/picker";
 import { getEffectThumb, toDataUri } from "@/src/utils/images";
 import { COLLECTIONS, getDailyEffectId } from "@/src/utils/collections";
+import { PaywallModal } from "@/src/components/PaywallModal";
 import { FontSize, FontWeight, Radius, Spacing } from "@/src/theme/tokens";
 
 export default function Home() {
@@ -23,21 +24,41 @@ export default function Home() {
   const { user } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ paywall?: string }>();
 
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
+  const [credits, setCredits] = useState<CreditsInfo | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [cat, projs] = await Promise.all([EffectsAPI.catalog(), ProjectsAPI.list({})]);
+      const [cat, projs, cred] = await Promise.all([
+        EffectsAPI.catalog(),
+        ProjectsAPI.list({}),
+        SubAPI.credits().catch(() => null),
+      ]);
       setCategories(cat.categories);
       setProjects(projs.items.slice(0, 12));
+      setCredits(cred);
     } catch { /* noop */ }
   }, []);
 
   useEffect(() => { load(); }, [load]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  useEffect(() => {
+    if (params.paywall === "1") {
+      setPaywallOpen(true);
+      // Clear the param so it doesn't re-open on next focus.
+      router.setParams({ paywall: undefined });
+    }
+  }, [params.paywall, router]);
+
+  const remaining = credits?.free_credits_remaining ?? 0;
+  const isPremium = !!credits?.is_premium || !!user?.is_premium;
+  const noCreditsLeft = !isPremium && remaining <= 0;
 
   const allEffects = useMemo(() => {
     const map: Record<string, EffectItem & { category: string }> = {};
@@ -58,6 +79,11 @@ export default function Home() {
   }, [categories]);
 
   const startFlow = async (source: "camera" | "gallery") => {
+    if (noCreditsLeft) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      setPaywallOpen(true);
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     const pick = source === "camera" ? await takePhoto() : await pickFromGallery();
     if (!pick) return;
@@ -66,6 +92,10 @@ export default function Home() {
   };
 
   const openEffect = (effectId: string, effectName: string, category: string) => {
+    if (noCreditsLeft) {
+      setPaywallOpen(true);
+      return;
+    }
     CreateFlow.setEffect({ effect_id: effectId, effect_name: effectName, category });
     router.push("/create/pick-source");
   };
@@ -103,6 +133,37 @@ export default function Home() {
           )}
         </Pressable>
       </View>
+
+      {/* Credits chip */}
+      {credits && (
+        <View style={{ paddingHorizontal: Spacing.xl, marginBottom: Spacing.lg }}>
+          {isPremium ? (
+            <View style={[styles.creditChip, { backgroundColor: colors.brand }]}>
+              <Ionicons name="diamond" size={14} color="#fff" />
+              <Text style={styles.creditChipTextLight}>
+                Premium — unlimited AI creations
+              </Text>
+            </View>
+          ) : (
+            <Pressable
+              testID="home-credits"
+              onPress={() => (remaining > 0 ? null : setPaywallOpen(true))}
+              style={[styles.creditChip, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}
+            >
+              <Ionicons name={remaining > 0 ? "flash" : "lock-closed"} size={14} color={remaining > 0 ? colors.brand : colors.onSurfaceTertiary} />
+              <Text style={[styles.creditChipText, { color: colors.onSurface }]}>
+                {remaining > 0
+                  ? `${remaining} ${remaining === 1 ? t("credits_free") : t("credits_free_plural")} ${t("credits_left")}`
+                  : `0 ${t("credits_free_plural")} • Premium required`}
+              </Text>
+              <View style={{ flex: 1 }} />
+              <Text style={{ color: colors.brand, fontWeight: FontWeight.semibold, fontSize: FontSize.sm }}>
+                {remaining > 0 ? "" : t("upgrade")}
+              </Text>
+            </Pressable>
+          )}
+        </View>
+      )}
 
       {/* Primary actions */}
       <View style={styles.actions}>
@@ -264,6 +325,13 @@ export default function Home() {
           )}
         />
       )}
+
+      <PaywallModal
+        visible={paywallOpen}
+        onClose={() => setPaywallOpen(false)}
+        onUpgrade={() => { setPaywallOpen(false); router.push("/premium"); }}
+        reason="credits"
+      />
     </ScrollView>
   );
 }
@@ -295,7 +363,14 @@ function SectionHeader({ title, action, onAction }: { title: string; action?: st
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: Spacing.xl, marginBottom: Spacing.xl },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: Spacing.xl, marginBottom: Spacing.md },
+  creditChip: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    paddingHorizontal: Spacing.md, paddingVertical: 10,
+    borderRadius: Radius.pill, borderWidth: 1, borderColor: "transparent",
+  },
+  creditChipText: { fontSize: FontSize.sm, fontWeight: FontWeight.semibold },
+  creditChipTextLight: { color: "#fff", fontSize: FontSize.sm, fontWeight: FontWeight.bold, letterSpacing: 0.2 },
   hi: { fontSize: FontSize.base, fontWeight: FontWeight.medium, marginBottom: 4 },
   lead: { fontSize: FontSize.xl2, fontWeight: FontWeight.bold, letterSpacing: -0.3, maxWidth: 260 },
   avatar: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },

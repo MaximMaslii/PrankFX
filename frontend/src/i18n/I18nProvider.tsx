@@ -123,6 +123,14 @@ const dict = {
     premium_required: "Premium required",
     premium_required_sub: "Upgrade to unlock this effect.",
     saved: "Saved to gallery",
+    // Credits paywall
+    credits_free: "free credit",
+    credits_free_plural: "free credits",
+    credits_left: "left",
+    paywall_title: "Unlock Unlimited FX",
+    paywall_sub: "You've used your free cinematic transformation. Upgrade to keep creating without limits.",
+    paywall_cta: "Get Premium",
+    paywall_later: "Maybe later",
   },
   ru: {
     onboarding_1_title: "Преображайте фото с ИИ",
@@ -228,6 +236,13 @@ const dict = {
     premium_required: "Требуется Premium",
     premium_required_sub: "Обновите план, чтобы открыть эффект.",
     saved: "Сохранено в галерею",
+    credits_free: "бесплатный кредит",
+    credits_free_plural: "бесплатных кредитов",
+    credits_left: "осталось",
+    paywall_title: "Открой безлимитные эффекты",
+    paywall_sub: "Вы использовали бесплатный кредит. Оформите Premium и создавайте без ограничений.",
+    paywall_cta: "Получить Premium",
+    paywall_later: "Позже",
   },
 } as const;
 

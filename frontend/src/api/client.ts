@@ -16,6 +16,8 @@ export type UserOut = {
   provider: string;
   is_premium: boolean;
   premium_tier?: string | null;
+  free_credits_used?: number;
+  free_credits_total?: number;
   created_at: string;
 };
 
@@ -142,6 +144,14 @@ export const ProjectsAPI = {
 };
 
 // --- Subscription ---
+export type CreditsInfo = {
+  is_premium: boolean;
+  premium_tier: string | null;
+  free_credits_used: number;
+  free_credits_total: number;
+  free_credits_remaining: number;
+};
+
 export const SubAPI = {
   mockActivate: (tier: "face_effects" | "ultimate", interval: "month" | "year") =>
     request<{ ok: boolean; tier: string; interval: string }>("/subscription/mock-activate", {
@@ -150,4 +160,5 @@ export const SubAPI = {
     }),
   restore: () => request<{ is_premium: boolean; premium_tier: string | null }>("/subscription/restore", { method: "POST" }),
   cancel: () => request<{ ok: boolean }>("/subscription/cancel", { method: "POST" }),
+  credits: () => request<CreditsInfo>("/subscription/credits"),
 };
