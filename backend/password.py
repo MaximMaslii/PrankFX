@@ -1,0 +1,3 @@
+hash_password
+
+verify_password
