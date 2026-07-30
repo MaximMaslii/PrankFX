@@ -1,9 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from app.schemas.auth import (
-    RegisterIn,
-    AuthResponse,
-)
+from app.schemas.auth import RegisterIn, AuthResponse
 from app.services.auth_service import AuthService
 
 router = APIRouter(
@@ -11,7 +8,7 @@ router = APIRouter(
     tags=["Authentication"],
 )
 
-service = AuthService()
+auth_service = AuthService()
 
 
 @router.post(
@@ -21,7 +18,7 @@ service = AuthService()
 async def register(body: RegisterIn):
 
     try:
-        return await service.register(body)
+        return await auth_service.register(body)
 
     except ValueError as e:
         raise HTTPException(
