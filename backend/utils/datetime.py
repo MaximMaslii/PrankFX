@@ -1,3 +1,5 @@
-now_utc()
+from datetime import datetime, timezone
 
-ensure_aware()
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
