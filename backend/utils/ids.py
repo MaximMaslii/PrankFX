@@ -1,5 +1,5 @@
-make_user_id()
+import uuid
 
-make_project_id()
 
-make_session_token()
+def generate_user_id() -> str:
+    return str(uuid.uuid4())
