@@ -1,13 +1,15 @@
 from app.repositories.user_repository import UserRepository
 
 from app.security.jwt import create_access_token
-from app.security.password import hash_password
+from app.security.password import hash_password, verify_password
 
 from app.utils.ids import generate_user_id
 from app.utils.datetime import utc_now
 
 from app.schemas.auth import (
     RegisterIn,
+    LoginIn,
+    ForgotIn,
     AuthResponse,
     UserOut,
 )
@@ -18,16 +20,32 @@ class AuthService:
     def __init__(self):
         self.users = UserRepository()
 
-    async def register(self, data: RegisterIn) -> AuthResponse:
+    @staticmethod
+    def _to_user_out(user: dict) -> UserOut:
+        return UserOut(
+            user_id=user["user_id"],
+            email=user["email"],
+            name=user.get("name"),
+            picture=user.get("picture"),
+            provider=user.get("provider", "email"),
+            is_premium=user.get("is_premium", False),
+            premium_tier=user.get("premium_tier"),
+            free_credits_used=user.get("free_credits_used", 0),
+            free_credits_total=user.get("free_credits_total", 1),
+            created_at=user["created_at"],
+        )
 
-        existing = await self.users.get_by_email(data.email)
+    async def register(self, data: RegisterIn) -> AuthResponse:
+        email = data.email.lower()
+
+        existing = await self.users.get_by_email(email)
 
         if existing:
             raise ValueError("User already exists")
 
         user = {
             "user_id": generate_user_id(),
-            "email": data.email.lower(),
+            "email": email,
             "password_hash": hash_password(data.password),
             "provider": "email",
             "name": data.name,
@@ -47,16 +65,49 @@ class AuthService:
 
         return AuthResponse(
             token=token,
-            user=UserOut(
-                user_id=user["user_id"],
-                email=user["email"],
-                name=user["name"],
-                picture=user["picture"],
-                provider=user["provider"],
-                is_premium=user["is_premium"],
-                premium_tier=user["premium_tier"],
-                free_credits_used=user["free_credits_used"],
-                free_credits_total=user["free_credits_total"],
-                created_at=user["created_at"],
-            ),
+            user=self._to_user_out(user),
         )
+
+    async def login(self, data: LoginIn) -> AuthResponse:
+        email = data.email.lower()
+
+        user = await self.users.get_by_email(email)
+
+        if not user:
+            raise ValueError("Invalid email or password")
+
+        password_hash = user.get("password_hash")
+
+        if not password_hash or not verify_password(
+            data.password,
+            password_hash,
+        ):
+            raise ValueError("Invalid email or password")
+
+        token = create_access_token(
+            {"user_id": user["user_id"]}
+        )
+
+        return AuthResponse(
+            token=token,
+            user=self._to_user_out(user),
+        )
+
+    async def get_current_user(self, user: dict) -> UserOut:
+        return self._to_user_out(user)
+
+    async def forgot(self, data: ForgotIn) -> dict:
+        # Password-reset email delivery is not implemented yet.
+        # Always return success without revealing whether the email exists.
+        return {
+            "ok": True,
+            "message": "If the account exists, reset instructions will be sent.",
+        }
+
+    async def delete_account(self, user_id: str) -> dict:
+        result = await self.users.delete(user_id)
+
+        if result.deleted_count == 0:
+            raise ValueError("User not found")
+
+        return {"ok": True}
