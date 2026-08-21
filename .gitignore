@@ -86,3 +86,6 @@ android-sdk/
 credentials.json
 *.key
 .credentials
+# PrankFX local AI test files
+backend/test_photo.jpg
+backend/gemini_black_eye.png

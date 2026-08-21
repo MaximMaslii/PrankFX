@@ -1,7 +1,9 @@
 from pathlib import Path
 from pydantic_settings import BaseSettings
 
+
 ROOT_DIR = Path(__file__).resolve().parent.parent
+
 
 class Settings(BaseSettings):
 
@@ -15,7 +17,10 @@ class Settings(BaseSettings):
 
     EMERGENT_LLM_KEY: str = ""
 
+    GEMINI_API_KEY: str
+
     class Config:
         env_file = ROOT_DIR / ".env"
+
 
 settings = Settings()
