@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -61,14 +61,74 @@ export default function Result() {
   };
 
   const doShare = async () => {
-    if (!project) return;
-    try {
-      await Share.share({
-        message: `Check out my cinematic ${project.effect_name} FX made with PrankFX!`,
-        url: toDataUri(project.result_image),
-      });
-    } catch { /* noop */ }
-  };
+  if (!project) return;
+
+  const message = `Check out my cinematic ${project.effect_name} FX made with PrankFX!`;
+  const imageUri = toDataUri(project.result_image);
+
+  try {
+    // =========================
+    // WEB
+    // =========================
+    if (Platform.OS === "web") {
+      const nav = globalThis.navigator as Navigator & {
+        share?: (data: {
+          title?: string;
+          text?: string;
+          url?: string;
+        }) => Promise<void>;
+      };
+
+      if (typeof nav?.share === "function") {
+        await nav.share({
+          title: `PrankFX — ${project.effect_name}`,
+          text: message,
+        });
+
+        return;
+      }
+
+      // Fallback for desktop browsers.
+      if (
+        typeof document !== "undefined" &&
+        typeof document.createElement === "function"
+      ) {
+        const link = document.createElement("a");
+
+        link.href = imageUri;
+        link.download = `prankfx_${project.effect_id}.jpg`;
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        Toast.success("Image downloaded");
+        return;
+      }
+
+      Toast.error("Sharing is not supported in this browser.");
+      return;
+    }
+
+    // =========================
+    // ANDROID / IOS
+    // =========================
+    await Share.share({
+      message,
+      url: imageUri,
+    });
+  } catch (error: any) {
+    if (
+      error?.name === "AbortError" ||
+      error?.message?.toLowerCase?.().includes("cancel")
+    ) {
+      return;
+    }
+
+    Toast.error(error?.message || t("error_generic"));
+  }
+};
+
 
   const save = async () => {
     if (!project) return;

@@ -33,6 +33,7 @@ function RootGate() {
       const inAuth = segments[0] === "auth";
       const inOnboarding = segments[0] === "onboarding";
       const inTabs = segments[0] === "(tabs)";
+      const inCreate = segments[0] === "create";
 
       if (!onboarded && !inOnboarding) {
         router.replace("/onboarding");
@@ -42,7 +43,7 @@ function RootGate() {
         router.replace("/auth/login");
         return;
       }
-      if (onboarded && user && (inAuth || inOnboarding || !inTabs && segments.length === 0)) {
+      if (onboarded && user && (inAuth || inOnboarding || (!inTabs && !inCreate))) {
         router.replace("/home");
       }
     })();
