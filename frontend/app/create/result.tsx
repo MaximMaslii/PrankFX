@@ -185,7 +185,7 @@ export default function Result() {
             <Ionicons name="chevron-back" size={26} color={colors.onSurface} />
           </Pressable>
           <Text style={[styles.title, { color: colors.onSurface }]}>{project?.effect_name || t("result_title")}</Text>
-          <Pressable testID="result-favorite" onPress={toggleFav} style={styles.back}>
+          <Pressable testID="result-favorite" onPress={toggleFav} disabled={loading} style={styles.back}>
             <Ionicons name={project?.is_favorite ? "heart" : "heart-outline"} size={24} color={project?.is_favorite ? colors.error : colors.onSurface} />
           </Pressable>
         </View>
@@ -225,7 +225,12 @@ export default function Result() {
   ]}
 >
   <View style={{ flexDirection: "row", gap: Spacing.md }}>
-    <Pressable testID="save-btn" onPress={save} style={{ flex: 1 }}>
+    <Pressable 
+      testID="save-btn" 
+      onPress={save}
+      disabled={loading} 
+      style={{ flex: 1, opacity: loading ? 0.5 : 1 }}
+    >
       <View
         style={[
           styles.saveBtn,
@@ -242,7 +247,12 @@ export default function Result() {
       </View>
     </Pressable>
 
-    <Pressable testID="share-btn" onPress={doShare} style={{ flex: 1 }}>
+    <Pressable 
+      testID="share-btn" 
+      onPress={doShare} 
+      disabled={loading}
+      style={{ flex: 1, opacity: loading ? 0.5 : 1 }}
+    >
       <LinearGradient
         colors={colors.brandGradient}
         start={{ x: 0, y: 0 }}
@@ -288,7 +298,8 @@ export default function Result() {
   <Pressable
     testID="try-another-btn"
     onPress={tryAnother}
-    style={{ marginTop: Spacing.md }}
+    disabled={loading}
+    style={{ marginTop: Spacing.md, opacity: loading ? 0.5 : 1 }}
   >
     <View
       style={[
