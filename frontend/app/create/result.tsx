@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -283,13 +283,18 @@ export default function Result() {
           },
         ]}
       >
+      {loading ? (
+        <ActivityIndicator size="small" color={colors.onSurface} />
+      ) : (
         <Ionicons
           name="refresh"
           size={20}
           color={colors.onSurface}
         />
+      )}
+        
         <Text style={[styles.saveText, { color: colors.onSurface }]}>
-          {loading ? "Regenerating..." : "Regenerate"}
+          {loading ? "AI is creating a new version..." : "Regenerate"}
         </Text>
       </View>
     </Pressable>
