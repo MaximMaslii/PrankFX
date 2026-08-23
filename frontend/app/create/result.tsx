@@ -8,7 +8,7 @@ import * as Haptics from "expo-haptics";
 
 import { useTheme } from "@/src/theme/ThemeProvider";
 import { useI18n } from "@/src/i18n/I18nProvider";
-import { ProjectFull, ProjectsAPI } from "@/src/api/client";
+import { GenAPI, ProjectFull, ProjectsAPI } from "@/src/api/client";
 import { BeforeAfterSlider } from "@/src/components/BeforeAfterSlider";
 import { CreateFlow } from "@/src/utils/createFlow";
 import { toDataUri } from "@/src/utils/images";
@@ -137,6 +137,34 @@ export default function Result() {
     await saveBase64ToGallery(project.result_image, name);
   };
 
+  const tryAnother = () => {
+    Haptics.selectionAsync().catch(() => {});
+    router.replace("/create/pick-effect");
+  };
+
+  const regenerate = async () => {
+    if (!project) return;
+
+    Haptics.selectionAsync().catch(() => {});
+    setLoading(true);
+
+    try {
+      const result = await GenAPI.generate(
+        project.original_image,
+        project.effect_id,
+        true
+      );
+
+      setProject(result);
+      CreateFlow.setResult(result);
+      Toast.success("Regenerated");
+    } catch (e: any) {
+      Toast.error(e?.message || t("error_generic"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const del = async () => {
     if (!project) return;
     try {
@@ -186,22 +214,102 @@ export default function Result() {
       </ScrollView>
 
       {/* Sticky actions */}
-      <View style={[styles.sticky, { paddingBottom: insets.bottom + 80, backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <View style={{ flexDirection: "row", gap: Spacing.md }}>
-          <Pressable testID="save-btn" onPress={save} style={{ flex: 1 }}>
-            <View style={[styles.saveBtn, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
-              <Ionicons name="download" size={20} color={colors.onSurface} />
-              <Text style={[styles.saveText, { color: colors.onSurface }]}>{t("save_gallery")}</Text>
-            </View>
-          </Pressable>
-          <Pressable testID="share-btn" onPress={doShare} style={{ flex: 1 }}>
-            <LinearGradient colors={colors.brandGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.saveBtn}>
-              <Ionicons name="share-outline" size={20} color="#fff" />
-              <Text style={[styles.saveText, { color: "#fff" }]}>{t("share")}</Text>
-            </LinearGradient>
-          </Pressable>
-        </View>
+<View
+  style={[
+    styles.sticky,
+    {
+      paddingBottom: insets.bottom + 80,
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+    },
+  ]}
+>
+  <View style={{ flexDirection: "row", gap: Spacing.md }}>
+    <Pressable testID="save-btn" onPress={save} style={{ flex: 1 }}>
+      <View
+        style={[
+          styles.saveBtn,
+          {
+            backgroundColor: colors.surfaceSecondary,
+            borderColor: colors.border,
+          },
+        ]}
+      >
+        <Ionicons name="download" size={20} color={colors.onSurface} />
+        <Text style={[styles.saveText, { color: colors.onSurface }]}>
+          {t("save_gallery")}
+        </Text>
       </View>
+    </Pressable>
+
+    <Pressable testID="share-btn" onPress={doShare} style={{ flex: 1 }}>
+      <LinearGradient
+        colors={colors.brandGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.saveBtn}
+      >
+        <Ionicons name="share-outline" size={20} color="#fff" />
+        <Text style={[styles.saveText, { color: "#fff" }]}>
+          {t("share")}
+        </Text>
+      </LinearGradient>
+    </Pressable>
+  </View>
+    
+    <Pressable
+      testID="regenerate-btn"
+      onPress={regenerate}
+      disabled={loading}
+      style={{ marginTop: Spacing.md }}
+    >
+      <View
+        style={[
+          styles.saveBtn,
+          {
+            backgroundColor: colors.surfaceSecondary,
+            borderColor: colors.border,
+            opacity: loading ? 0.5 : 1,
+          },
+        ]}
+      >
+        <Ionicons
+          name="refresh"
+          size={20}
+          color={colors.onSurface}
+        />
+        <Text style={[styles.saveText, { color: colors.onSurface }]}>
+          {loading ? "Regenerating..." : "Regenerate"}
+        </Text>
+      </View>
+    </Pressable>
+
+  {/* Try Another Effect */}
+  <Pressable
+    testID="try-another-btn"
+    onPress={tryAnother}
+    style={{ marginTop: Spacing.md }}
+  >
+    <View
+      style={[
+        styles.saveBtn,
+        {
+          backgroundColor: colors.surfaceSecondary,
+          borderColor: colors.border,
+        },
+      ]}
+    >
+      <Ionicons
+        name="sparkles-outline"
+        size={20}
+        color={colors.brand}
+      />
+      <Text style={[styles.saveText, { color: colors.brand }]}>
+        Try Another Effect
+      </Text>
+    </View>
+  </Pressable>
+</View>
     </View>
   );
 }
