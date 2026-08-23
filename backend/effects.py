@@ -6,11 +6,21 @@ camera angle and lighting while applying ONLY the requested cinematic effect.
 from typing import List, Dict
 
 _IDENTITY_LOCK = (
-    "Keep the subject's face, identity, gender, age, ethnicity, hair, pose, "
-    "clothing, framing, camera angle, focal length, depth of field, background, "
-    "and lighting exactly the same. This is a fictional movie-style visual effect "
-    "for entertainment. Do not alter anything except adding the specific effect "
-    "described. Output must be photorealistic and cinematic, high resolution."
+    "STRICT IMAGE EDIT. Preserve the original photograph exactly. "
+    "Keep the person's identity, facial identity, facial proportions, "
+    "facial structure, eyes, nose, mouth, teeth, skin tone, hair, hairstyle, "
+    "age, gender, body shape, pose, hands, clothing, accessories and expression "
+    "unchanged. Preserve the exact camera angle, framing, composition, "
+    "perspective, focal length, depth of field, background, environment, "
+    "objects, colors and lighting. "
+    "Do not regenerate, replace, beautify, reshape or redesign the person. "
+    "Do not change the background or camera composition. "
+    "ONLY add the specific visual effect requested below. "
+    "The effect must look like professional Hollywood practical SFX makeup "
+    "or realistic movie VFX physically applied to the original photograph. "
+    "The result must remain clearly the same photograph and the same person. "
+    "Photorealistic, seamless integration, natural skin texture, "
+    "cinematic high-resolution result."
 )
 
 _OBJECT_LOCK = (
@@ -26,16 +36,193 @@ def _fx(base: str, lock: str = _IDENTITY_LOCK) -> str:
 
 
 FACE_EFFECTS: List[Dict] = [
-    {"id": "movie_bruises", "name": "Movie Bruises", "emoji": "🥊",
-     "prompt": _fx("Add realistic Hollywood movie-style bruises and swelling around the cheekbone and jawline with subtle purple, red and yellow tones like professional SFX makeup.")},
-    {"id": "black_eye", "name": "Black Eye", "emoji": "👊",
-     "prompt": _fx("Add a realistic dark purple and blue swollen black eye around the left eye with subtle blood coloring, like a boxing movie scene.")},
-    {"id": "bandages", "name": "Bandages", "emoji": "🩹",
+    {
+    "id": "movie_bruises",
+    "name": "Movie Bruises",
+    "emoji": "🥉",
+    "prompt": _fx(
+        "Create a strong, realistic Hollywood movie fight aftermath SFX makeup "
+        "effect while preserving the original photograph and the exact identity "
+        "of the person. The result should look like the person has just been "
+        "through a serious physical fight. "
+
+        "Add multiple clearly visible bruises across the face, especially around "
+        "both cheekbones, jawline, temples and under-eye areas. Use realistic "
+        "layers of deep purple, blue, red, burgundy and yellow-green bruising with "
+        "different ages and intensities. "
+
+        "Add noticeable facial swelling and puffiness around the cheeks, "
+        "cheekbones, lips and under-eye areas. Make the swelling clearly visible "
+        "but anatomically realistic. "
+
+        "Add several realistic superficial abrasions and scratches on the "
+        "forehead, cheeks, nose and chin. Include a few small fresh abrasions "
+        "with subtle traces of blood and dried blood around them. Add realistic "
+        "minor blood smears and streaks on the skin, especially around the nose, "
+        "lips and scratched areas. Blood should remain cinematic and believable, "
+        "not excessive or graphic. "
+
+        "Add subtle dark red and purple blood pooling beneath a few bruises and "
+        "small dried blood marks where appropriate. Add realistic skin texture "
+        "around every injury so that the effects look physically present on the "
+        "original skin. "
+
+        "Create varied injury intensity: some bruises should be large and dark, "
+        "some smaller and fading, with several overlapping bruises, abrasions and "
+        "swollen areas. The overall face should clearly communicate a recent "
+        "movie fight rather than a single isolated bruise. "
+
+        "ABSOLUTELY DO NOT change the person's identity, facial proportions, "
+        "eyes, nose, mouth, teeth, hairstyle, expression, body, clothing, hands, "
+        "background, objects, camera angle, composition or lighting. Do not "
+        "regenerate the face. Do not beautify or reshape the person. Only add "
+        "the requested cinematic SFX injuries to the existing photograph. "
+        "Photorealistic professional Hollywood makeup and VFX, seamless skin "
+        "integration, realistic lighting and high-resolution detail."
+    ),
+},
+{
+    "id": "black_eye",
+    "name": "Black Eye",
+    "emoji": "👊",
+    "prompt": _fx(
+        "Create a strong, realistic Hollywood black-eye SFX makeup effect "
+        "while preserving the original photograph and exact identity of the person. "
+
+        "Add a clearly visible, substantial black eye around the LEFT eye, "
+        "extending naturally across the upper eyelid, lower eyelid, under-eye area "
+        "and outer corner of the eye. "
+
+        "Use layered realistic colors including deep purple, dark blue, burgundy, "
+        "red and subtle yellow-green tones around the outer edges, creating the "
+        "appearance of a significant recent bruise. "
+
+        "Add noticeable but anatomically realistic swelling around the eye and "
+        "upper cheekbone. Make the eyelid and surrounding tissue visibly puffy "
+        "without changing the actual shape, position or structure of the eye. "
+
+        "Add several small superficial scratches and abrasions around the eyebrow, "
+        "temple and cheekbone, with subtle traces of dried blood on a few of them. "
+
+        "Add realistic skin texture, discoloration and soft transitions between "
+        "healthy skin and bruised areas. The injury should look like professional "
+        "Hollywood practical SFX makeup rather than a painted filter. "
+
+        "The black eye should be clearly noticeable at first glance and occupy a "
+        "realistic area around the eye, while remaining believable and cinematic. "
+
+        "ABSOLUTELY DO NOT change the person's identity, facial proportions, "
+        "eye color, eyeball, nose, mouth, teeth, hairstyle, expression, body, "
+        "clothing, hands, background, objects, camera angle, composition or lighting. "
+        "Do not close, replace, regenerate or reshape the eye. "
+        "Do not regenerate the face. "
+        "Only add the requested cinematic injury effects to the existing photograph. "
+
+        "Photorealistic professional Hollywood SFX makeup, seamless integration, "
+        "natural skin texture, realistic lighting and high-resolution detail."
+    ),
+},
+{
+    "id": "swollen_face",
+    "name": "Swollen Face",
+    "emoji": "🤕",
+    "prompt": _fx(
+        "Create a strong, realistic Hollywood movie SFX effect showing "
+        "significant facial swelling after a recent physical fight, while "
+        "preserving the original photograph and the exact identity of the person. "
+
+        "Add clearly visible swelling and puffiness across both cheeks, "
+        "cheekbones, under-eye areas, jawline and around the lips. The swelling "
+        "should be uneven and naturally distributed, with some areas more swollen "
+        "than others, creating the appearance of a serious but believable "
+        "post-fight facial injury. "
+
+        "Add realistic redness, mild purple and reddish discoloration and subtle "
+        "bruising beneath the swollen areas. Include several smaller bruised areas "
+        "around the cheekbones and jawline to make the injury look more natural. "
+
+        "Add a few superficial scratches and abrasions on the cheeks, forehead "
+        "and chin, with very subtle dried blood traces on some of the scratches. "
+        "Keep all injuries cinematic and believable, without graphic open wounds. "
+
+        "Make the cheeks visibly fuller and puffy because of swelling, especially "
+        "around the cheekbones and under the eyes. Add realistic skin tension, "
+        "soft tissue puffiness and subtle changes in skin texture around the "
+        "affected areas. "
+
+        "The result should immediately communicate that the person has suffered "
+        "a strong impact to the face, similar to professional Hollywood makeup "
+        "and movie VFX. The swelling should be clearly visible at first glance "
+        "but remain anatomically realistic. "
+
+        "ABSOLUTELY DO NOT change the person's identity, facial identity, "
+        "facial proportions, eyes, eyeballs, nose, mouth, teeth, hairstyle, "
+        "expression, body, clothing, hands, background, objects, camera angle, "
+        "composition or lighting. Do not reshape or regenerate the face. "
+        "Do not make the person unrecognizable. "
+        "Only add realistic swelling, bruising and superficial SFX injuries "
+        "to the existing photograph. "
+
+        "Photorealistic professional Hollywood SFX makeup and VFX, seamless "
+        "integration with the original skin texture, realistic lighting and "
+        "high-resolution cinematic detail."
+    ),
+},    
+{"id": "bandages", "name": "Bandages", "emoji": "🩹",
      "prompt": _fx("Add realistic cinematic white gauze bandages wrapped diagonally around the head and cheek with small blood spots, like an action movie survivor.")},
-    {"id": "swollen_face", "name": "Swollen Face", "emoji": "😵",
-     "prompt": _fx("Add realistic post-fight facial swelling with cinematic redness and puffy skin around the cheeks and eye area.")},
-    {"id": "action_hero", "name": "Action Movie Hero", "emoji": "💥",
-     "prompt": _fx("Add cinematic action-hero grit: light dirt smudges, a few small cuts on cheek and forehead, sweat highlights and dramatic movie-style shadows.")},
+    {
+    "id": "action_hero",
+    "name": "Action Movie Hero",
+    "emoji": "💥",
+    "prompt": _fx(
+        "Create a strong, realistic Hollywood action-movie aftermath SFX "
+        "effect while preserving the original photograph and the exact identity "
+        "of the person. The person should look like an action movie hero who "
+        "has just survived a serious fight. "
+
+        "Add multiple clearly visible facial bruises across the cheekbones, "
+        "jawline, temples and under-eye areas. Use layered realistic purple, "
+        "blue, red, burgundy and subtle yellow-green discoloration with "
+        "different sizes and intensities. "
+
+        "Add noticeable but anatomically realistic swelling and puffiness "
+        "around the cheeks, cheekbones and under-eye areas. Add subtle swelling "
+        "around the lips and jawline where appropriate. "
+
+        "Add numerous superficial scratches and abrasions of different sizes "
+        "across the forehead, cheeks, nose, chin and jawline. Some scratches "
+        "should be thin and linear while others should look like small scraped "
+        "areas from a recent fight. "
+
+        "Add subtle redness and irritation around the scratches and bruises. "
+        "Include a few small cinematic traces of fresh or dried blood near "
+        "selected superficial scratches, especially around the nose, lips and "
+        "cheeks. Keep blood limited, realistic and non-graphic. "
+
+        "Create varied injury intensity: several prominent bruises and swollen "
+        "areas combined with many smaller scratches and abrasions. The injuries "
+        "should look naturally distributed rather than like a repeated filter. "
+
+        "Preserve natural skin pores, texture and realistic transitions between "
+        "healthy and injured skin. Make the overall result immediately readable "
+        "as a professional Hollywood action-film makeup and VFX effect. "
+
+        "The person must remain clearly recognizable as the same person in the "
+        "original photograph. Preserve the original pose, expression, clothing, "
+        "background, camera angle, composition and lighting. "
+
+        "ABSOLUTELY DO NOT change the person's identity, facial proportions, "
+        "eyes, eyeballs, nose, mouth, teeth, hairstyle, expression, body, "
+        "clothing, hands, background, objects, camera angle, composition or "
+        "lighting. Do not regenerate, replace, beautify or reshape the face. "
+        "Do not make the person unrecognizable. Only add the requested "
+        "cinematic SFX injuries to the existing photograph. "
+
+        "Photorealistic professional Hollywood practical SFX makeup and VFX, "
+        "seamless integration with the original skin texture, realistic "
+        "lighting and high-resolution cinematic detail."
+    ),
+},
     {"id": "zombie", "name": "Zombie Makeup", "emoji": "🧟",
      "prompt": _fx("Apply realistic Hollywood zombie SFX makeup: pale grayish skin, dark under-eye hollows, cracked lips, small rotting wounds on the cheek. Keep expression natural.")},
     {"id": "pirate_scar", "name": "Pirate Scar", "emoji": "🏴‍☠️",
@@ -72,15 +259,159 @@ VEHICLE_EFFECTS: List[Dict] = [
     {"id": "broken_windshield", "name": "Broken Windshield", "emoji": "🚗",
      "prompt": _fx("Add a realistic cinematic cracked windshield with spider-web fracture pattern around a central impact point.", _OBJECT_LOCK)},
     {"id": "heavy_scratches", "name": "Heavy Scratches", "emoji": "🔧",
-     "prompt": _fx("Add heavy realistic scratches and paint scrapes along the door panels and hood, like a movie chase scene.", _OBJECT_LOCK)},
+     "prompt": _fx(
+    	"Create a strong, realistic Hollywood movie SFX effect showing "
+    	"multiple clearly visible scratches, abrasions and superficial impact "
+    	"damage on the subject. Preserve the original photograph and exact "
+    	"identity of the person. "
+
+    	"Add numerous realistic superficial scratches of different lengths, "
+    	"widths, directions and intensity across the visible affected areas. "
+    	"Include several prominent scratches together with many smaller "
+    	"scratches and abrasions so the effect is clearly noticeable at first glance. "
+
+    	"Add realistic redness, irritated skin and subtle swelling around some "
+    	"of the scratches. Create natural variation: some marks should look fresh "
+    	"and reddish while others should appear slightly older with darker "
+    	"discoloration and subtle dried-blood traces. "
+
+    	"Add a few small cinematic blood traces around selected superficial "
+    	"scratches, keeping the blood limited and believable. Do not create "
+    	"deep open wounds or graphic gore. "
+
+    	"Preserve realistic skin texture, pores and natural transitions between "
+    	"undamaged and affected areas. The scratches should look physically "
+    	"present on the original skin, like professional Hollywood practical "
+    	"SFX makeup rather than a digital filter. "
+
+    	"Distribute the scratches naturally instead of creating repeated patterns. "
+    	"Use different sizes, angles, spacing and intensity for a realistic "
+    	"post-fight appearance. "
+
+    	"ABSOLUTELY DO NOT change the person's identity, facial proportions, "
+    	"eyes, nose, mouth, teeth, hairstyle, expression, body, clothing, hands, "
+    	"background, objects, camera angle, composition or lighting. Do not "
+    	"regenerate or reshape the person. Only add the requested superficial "
+    	"scratches, abrasions, redness, swelling and small cinematic blood traces "
+    	"to the existing photograph. "
+
+    	"Photorealistic professional Hollywood SFX makeup, seamless integration, "
+    	"natural skin texture, realistic lighting and high-resolution cinematic detail."
+)},
     {"id": "mud", "name": "Mud", "emoji": "🟤",
      "prompt": _fx("Cover the vehicle with realistic thick mud splatters and dirt streaks across the body, wheels and windows, like an off-road movie scene.", _OBJECT_LOCK)},
     {"id": "rust", "name": "Rust", "emoji": "🦀",
      "prompt": _fx("Add realistic aged rust patches and corrosion across the body panels, wheel arches and edges, keeping the vehicle shape intact.", _OBJECT_LOCK)},
     {"id": "burned_paint", "name": "Burned Paint", "emoji": "🔥",
      "prompt": _fx("Add realistic burned and blistered paint with soot marks and heat damage on the hood and doors, cinematic action movie style.", _OBJECT_LOCK)},
-    {"id": "police_chase", "name": "Police Chase Damage", "emoji": "🚨",
-     "prompt": _fx("Add cinematic police chase damage: bullet holes on the door, dented panels, cracked side window and mud, like a Hollywood action movie.", _OBJECT_LOCK)},
+    {
+        "id": "police_chase",
+        "name": "Police Chase Damage",
+        "emoji": "🚨",
+        "prompt": _fx(
+            "Create a highly realistic Hollywood police-chase aftermath "
+            "automotive SFX effect on the existing vehicle photograph. "
+            "Preserve the exact vehicle, its make, model, body shape, "
+            "proportions, color, wheels, tires, windows, mirrors, headlights, "
+            "taillights, badges and license plate. "
+
+            "Make the vehicle look like it has just escaped a high-speed "
+            "movie chase with realistic exterior damage. Add multiple "
+            "collision-related scratches, scuff marks, scraped paint and "
+            "localized dents across several body panels. "
+
+            "Add realistic damage to appropriate areas such as the front "
+            "bumper, rear bumper, fenders, doors and side panels. Vary the "
+            "severity so some damage is minor while several areas are clearly "
+            "visible and significant. "
+
+            "Add long directional scratches and paint-transfer marks suggesting "
+            "contact with another vehicle, a barrier or roadside object. Include "
+            "smaller random scratches and scuffs around the main impact areas. "
+
+            "Add realistic dirt, dust, road grime and subtle tire or rubber "
+            "scuff marks around some damaged areas, as if the vehicle has been "
+            "driven aggressively through a dusty road or urban environment. "
+
+            "Add a few believable cracks or damaged exterior plastic components "
+            "where appropriate, but do not make every light or panel damaged. "
+            "Keep the vehicle structurally recognizable and visually believable. "
+
+            "Use realistic reflections, shadows, metallic paint texture and "
+            "panel deformation consistent with the original photograph. "
+            "The result should look like a real photograph from an action movie "
+            "after a dangerous car chase. "
+
+            "Create varied damage patterns and avoid repetitive artificial "
+            "textures. Damage must follow the physical geometry of the existing "
+            "vehicle and remain consistent with the original perspective. "
+
+            "ABSOLUTELY DO NOT change or replace the vehicle. Do not change "
+            "its make, model, color, wheels, tires, windows, license plate, "
+            "badges, background, road, buildings, people, camera angle, "
+            "perspective, composition or lighting. Do not add police cars, "
+            "weapons, explosions or other vehicles. Do not redesign the car. "
+            "Only add realistic chase-related scratches, dents, scuffs, "
+            "paint damage and localized exterior damage to the existing vehicle. "
+
+            "Photorealistic professional automotive VFX, realistic collision "
+            "damage, physically believable materials, accurate reflections "
+            "and shadows, seamless integration and high-resolution cinematic detail."
+        ),
+    },
+    {
+        "id": "car_accident",
+        "name": "Car Accident",
+        "emoji": "💥",
+        "prompt": _fx(
+            "Create a highly realistic Hollywood automotive accident SFX effect "
+            "on the existing vehicle photograph. Preserve the exact vehicle, "
+            "its make, model, body shape, proportions, color, wheels, tires, "
+            "windows, mirrors, headlights, taillights, badges and license plate. "
+
+            "Make the vehicle look like it has recently been involved in a "
+            "realistic road accident. Add several believable areas of body "
+            "damage including dents, scraped paint, scuff marks and localized "
+            "panel deformation. "
+
+            "Add realistic collision damage to appropriate exterior areas such "
+            "as the bumper, fenders, doors, hood and side panels. Damage should "
+            "vary in severity: some areas lightly scratched and others visibly "
+            "dented or scraped. "
+
+            "Add multiple realistic scratches of different lengths and depths, "
+            "paint transfer marks, scuffed paint and exposed underlying material "
+            "where appropriate. Include subtle dirt, dust and road debris around "
+            "the damaged areas. "
+
+            "Add realistic cracks or damage to selected headlights or exterior "
+            "plastic components only where physically appropriate. Do not make "
+            "every component damaged. Keep the accident believable. "
+
+            "The damaged panels should have realistic reflections, shadows, "
+            "surface deformation and automotive paint texture consistent with "
+            "the original lighting. Make the result look like a real photograph "
+            "of the same vehicle after a serious but believable collision. "
+
+            "Use varied damage patterns and avoid duplicated or artificial-looking "
+            "textures. The accident damage should be clearly visible at first "
+            "glance but remain physically plausible. "
+
+            "ABSOLUTELY DO NOT replace, redesign or regenerate the vehicle. "
+            "Do not change the vehicle model, color, wheels, tires, windows, "
+            "license plate, badges, background, road, buildings, people, "
+            "camera angle, perspective, composition or lighting. "
+            "Do not add another vehicle. Do not remove parts of the vehicle "
+            "unless the damage naturally implies a small localized deformation. "
+            "Only modify the existing vehicle by adding realistic collision "
+            "damage, dents, scratches, scuffs and paint damage. "
+
+            "Photorealistic professional automotive VFX, physically believable "
+            "collision damage, realistic reflections and shadows, seamless "
+            "integration with the original photograph and high-resolution "
+            "cinematic detail."
+        ),
+    },
     {"id": "apocalypse_car", "name": "Apocalypse Car", "emoji": "☢️",
      "prompt": _fx("Transform into a post-apocalyptic Mad Max-style vehicle: rust, welded metal patches, spikes, dust and battle damage. Keep the base vehicle recognizable.", _OBJECT_LOCK)},
     {"id": "monster_truck", "name": "Monster Truck Damage", "emoji": "🛻",
@@ -142,14 +473,18 @@ CATEGORIES = [
     {"id": "vehicle", "name": "Vehicle", "emoji": "🚗", "effects": VEHICLE_EFFECTS, "premium_tier": "ultimate"},
     {"id": "house", "name": "House", "emoji": "🏠", "effects": HOUSE_EFFECTS, "premium_tier": "ultimate"},
     {"id": "object", "name": "Object", "emoji": "📦", "effects": OBJECT_EFFECTS, "premium_tier": "ultimate"},
+    
 ]
-
 
 def get_effect_by_id(effect_id: str) -> Dict | None:
     for cat in CATEGORIES:
         for e in cat["effects"]:
             if e["id"] == effect_id:
-                return {**e, "category": cat["id"], "premium_tier": cat["premium_tier"]}
+                return {
+                    **e,
+                    "category": cat["id"],
+                    "premium_tier": "free" if e["id"] == "police_chase" else cat["premium_tier"],
+                }
     return None
 
 
@@ -162,7 +497,16 @@ def get_public_catalog() -> List[Dict]:
             "emoji": cat["emoji"],
             "premium_tier": cat["premium_tier"],
             "effects": [
-                {"id": e["id"], "name": e["name"], "emoji": e["emoji"]}
+                {
+                    "id": e["id"],
+                    "name": e["name"],
+                    "emoji": e["emoji"],
+                    "premium_tier": (
+                        "free"
+                        if e["id"] == "police_chase"
+                        else cat["premium_tier"]
+                    ),
+                }
                 for e in cat["effects"]
             ],
         }

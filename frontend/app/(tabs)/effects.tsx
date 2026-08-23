@@ -40,13 +40,25 @@ export default function EffectsScreen() {
   ]), [categories, t]);
 
   const flat = useMemo(() => {
-    if (active === "all") {
-      return categories.flatMap((c) => c.effects.map((e) => ({ ...e, category: c.id, premium_tier: c.premium_tier })));
-    }
-    const cat = categories.find((c) => c.id === active);
-    if (!cat) return [];
-    return cat.effects.map((e) => ({ ...e, category: cat.id, premium_tier: cat.premium_tier }));
-  }, [categories, active]);
+  if (active === "all") {
+    return categories.flatMap((c) =>
+      c.effects.map((e) => ({
+        ...e,
+        category: c.id,
+        premium_tier: e.premium_tier || c.premium_tier,
+      }))
+    );
+  }
+
+  const cat = categories.find((c) => c.id === active);
+  if (!cat) return [];
+
+  return cat.effects.map((e) => ({
+    ...e,
+    category: cat.id,
+    premium_tier: e.premium_tier || cat.premium_tier,
+  }));
+}, [categories, active]);
 
   const isLocked = (premium_tier: string) => {
     if (!premium_tier) return false;

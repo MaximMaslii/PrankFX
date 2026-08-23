@@ -23,7 +23,7 @@ export type UserOut = {
 
 export type AuthResponse = { token: string; user: UserOut };
 
-export type EffectItem = { id: string; name: string; emoji: string };
+export type EffectItem = { id: string; name: string; emoji: string; premium_tier?: string; };
 export type CategoryItem = {
   id: string;
   name: string;

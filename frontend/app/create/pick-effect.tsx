@@ -36,10 +36,14 @@ export default function PickEffect() {
   useEffect(() => { load(); }, [load]);
 
   const items = useMemo(() => {
-    const cat = categories.find((c) => c.id === active);
-    if (!cat) return [];
-    return cat.effects.map((e) => ({ ...e, premium_tier: cat.premium_tier }));
-  }, [categories, active]);
+  const cat = categories.find((c) => c.id === active);
+  if (!cat) return [];
+
+  return cat.effects.map((e) => ({
+    ...e,
+    premium_tier: e.premium_tier || cat.premium_tier,
+  }));
+}, [categories, active]);
 
   const isLocked = (premium_tier: string) => {
     if (premium_tier === "face_effects") return !(user?.premium_tier === "face_effects" || user?.premium_tier === "ultimate");
