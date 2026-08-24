@@ -9,6 +9,11 @@ import * as Haptics from "expo-haptics";
 
 import { useTheme } from "@/src/theme/ThemeProvider";
 import { useI18n } from "@/src/i18n/I18nProvider";
+import {
+  getEffectCategoryName,
+  getEffectDisplayName,
+  getEffectName,
+} from "@/src/i18n/effectNames";
 import { useAuth } from "@/src/auth/AuthProvider";
 import { CategoryItem, EffectsAPI } from "@/src/api/client";
 import { CreateFlow } from "@/src/utils/createFlow";
@@ -17,7 +22,7 @@ import { FontSize, FontWeight, Radius, Spacing } from "@/src/theme/tokens";
 
 export default function EffectsScreen() {
   const { colors } = useTheme();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { user } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -35,9 +40,17 @@ export default function EffectsScreen() {
   useEffect(() => { load(); }, [load]);
 
   const filters = useMemo(() => ([
-    { id: "all", name: t("all"), emoji: "✨" },
-    ...categories.map((c) => ({ id: c.id, name: c.name, emoji: c.emoji })),
-  ]), [categories, t]);
+    {
+      id: "all",
+      name: getEffectCategoryName("all", lang, t("all")),
+      emoji: "✨",
+    },
+    ...categories.map((c) => ({
+      id: c.id,
+      name: getEffectCategoryName(c.id, lang, c.name),
+      emoji: c.emoji,
+    })),
+  ]), [categories, lang, t]);
 
   const flat = useMemo(() => {
   if (active === "all") {
@@ -131,7 +144,13 @@ export default function EffectsScreen() {
               )}
               <View style={styles.cardBottom}>
                 <Text style={{ fontSize: 22 }}>{item.emoji}</Text>
-                <Text numberOfLines={2} style={styles.cardName}>{item.name}</Text>
+                <Text numberOfLines={2} style={styles.cardName}>
+                  {getEffectDisplayName(
+                    item.id,
+                    lang,
+                    getEffectName(item.id, lang, item.name)
+                )}
+                </Text>
               </View>
             </Pressable>
           );

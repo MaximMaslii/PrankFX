@@ -72,7 +72,7 @@ export default function Settings() {
       <Section title={t("preferences")}>
         <Row testID="settings-language" icon="language" label={t("language")}>
           <View style={styles.segment2}>
-            {(["en", "ru"] as const).map((l) => (
+            {(["en", "ru", "de"] as const).map((l) => (
               <Pressable
                 key={l}
                 onPress={() => setLang(l)}
@@ -164,7 +164,14 @@ const styles = StyleSheet.create({
   rowIcon: { width: 30, height: 30, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   rowLabel: { fontSize: FontSize.md, fontWeight: FontWeight.medium },
   segment2: { flexDirection: "row", gap: 6, backgroundColor: "transparent" },
-  seg2Item: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 },
+  seg2Item: {
+    minWidth: 38,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   switch: { width: 46, height: 26, borderRadius: 13, justifyContent: "center" },
   switchDot: { width: 22, height: 22, borderRadius: 11, backgroundColor: "#fff" },
   version: { textAlign: "center", marginTop: Spacing.xl2, fontSize: FontSize.xs },

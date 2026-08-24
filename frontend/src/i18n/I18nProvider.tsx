@@ -4,12 +4,37 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { getLocales } from "expo-localization";
 import { storage } from "@/src/utils/storage";
+import { effectNames } from "./effectNames";
 
-export type Lang = "en" | "ru";
+export type Lang = "en" | "ru" | "de";
 
 const dict = {
   en: {
+    premium_title: "Unlock Cinematic Pro",
+    premium_subtitle: "Premium AI effects with no limits",
+    unlimited_face_effects: "Unlimited Face Effects",
+    hd_export: "HD Export",
+    no_watermark: "No Watermark",
+    priority_ai_processing: "Priority AI Processing",
+    unlimited_history: "Unlimited History",
+    everything_face_premium: "Everything in Face Premium",
+    vehicle_effects: "Vehicle Effects",
+    house_effects: "House Effects",
+    object_effects: "Object Effects",
+    future_premium_effects: "Future Premium Effects",
+    unlimited_ai_generations: "Unlimited AI Generations",
+    priority_servers: "Priority Servers",
+    save_percent: "Save 33%",
+    premium_activated: "Premium activated!",
+    purchases_restored: "Purchases restored",
+    no_active_subscription: "No active subscription",
+    subscription_canceled: "Subscription canceled",
+    demo_subscription: "This is a demo subscription. In production, RevenueCat / Stripe handles real billing.",
     // Onboarding
+    effect_of_the_day: "EFFECT OF THE DAY",
+    todays_pick: "Today's pick",
+    tap_to_try_effect: "Tap to try this cinematic effect →",
+    discover: "Discover",
     onboarding_1_title: "Transform photos with AI",
     onboarding_1_sub: "Turn any picture into a cinematic Hollywood scene in seconds.",
     onboarding_2_title: "Create cinematic visual effects",
@@ -133,6 +158,30 @@ const dict = {
     paywall_later: "Maybe later",
   },
   ru: {
+    premium_title: "Открой Cinematic Pro",
+    premium_subtitle: "Премиум-эффекты с ИИ без ограничений",
+    unlimited_face_effects: "Безлимитные эффекты для лица",
+    hd_export: "Экспорт в HD",
+    no_watermark: "Без водяного знака",
+    priority_ai_processing: "Приоритетная обработка ИИ",
+    unlimited_history: "Безлимитная история",
+    everything_face_premium: "Всё из Face Premium",
+    vehicle_effects: "Эффекты для автомобилей",
+    house_effects: "Эффекты для домов",
+    object_effects: "Эффекты для объектов",
+    future_premium_effects: "Будущие Premium-эффекты",
+    unlimited_ai_generations: "Безлимитные генерации ИИ",
+    priority_servers: "Приоритетные серверы",
+    save_percent: "Экономия 33%",
+    premium_activated: "Premium активирован!",
+    purchases_restored: "Покупки восстановлены",
+    no_active_subscription: "Активной подписки нет",
+    subscription_canceled: "Подписка отменена",
+    demo_subscription: "Это демонстрационная подписка. В рабочей версии оплатой будут управлять RevenueCat / Stripe.",
+    effect_of_the_day: "ЭФФЕКТ ДНЯ",
+    todays_pick: "Выбор дня",
+    tap_to_try_effect: "Нажмите, чтобы попробовать этот кинематографический эффект →",
+    discover: "Подборки",
     onboarding_1_title: "Преображайте фото с ИИ",
     onboarding_1_sub: "Превратите любое фото в кинокадр за секунды.",
     onboarding_2_title: "Кинематографические эффекты",
@@ -244,6 +293,154 @@ const dict = {
     paywall_cta: "Получить Premium",
     paywall_later: "Позже",
   },
+  de: {
+    premium_title: "Cinematic Pro freischalten",
+    premium_subtitle: "Premium-KI-Effekte ohne Limits",
+    unlimited_face_effects: "Unbegrenzte Gesichtseffekte",
+    hd_export: "HD-Export",
+    no_watermark: "Kein Wasserzeichen",
+    priority_ai_processing: "Priorisierte KI-Verarbeitung",
+    unlimited_history: "Unbegrenzte Historie",
+    everything_face_premium: "Alles aus Face Premium",
+    vehicle_effects: "Fahrzeug-Effekte",
+    house_effects: "Haus-Effekte",
+    object_effects: "Objekt-Effekte",
+    future_premium_effects: "Zukünftige Premium-Effekte",
+    unlimited_ai_generations: "Unbegrenzte KI-Generierungen",
+    priority_servers: "Priorisierte Server",
+    save_percent: "33 % sparen",
+    premium_activated: "Premium aktiviert!",
+    purchases_restored: "Käufe wiederhergestellt",
+    no_active_subscription: "Kein aktives Abonnement",
+    subscription_canceled: "Abonnement gekündigt",
+    demo_subscription: "Dies ist ein Demo-Abonnement. In der Produktion übernimmt RevenueCat / Stripe die Abrechnung.",
+    effect_of_the_day: "EFFEKT DES TAGES",
+    todays_pick: "Auswahl des Tages",
+    tap_to_try_effect: "Tippe, um diesen filmischen Effekt auszuprobieren →",
+    discover: "Entdecken",
+    onboarding_1_title: "Fotos mit KI verwandeln",
+    onboarding_1_sub: "Verwandle jedes Foto in wenigen Sekunden in eine filmreife Szene.",
+    onboarding_2_title: "Filmische visuelle Effekte",
+    onboarding_2_sub: "Filmische Verletzungen, Explosionen, Monsterangriffe und vieles mehr.",
+    onboarding_3_title: "Gesichter, Fahrzeuge, Häuser und mehr",
+    onboarding_3_sub: "Wende Premium-Effekte auf alles in deiner Fotobibliothek an.",
+    onboarding_4_title: "Jetzt erstellen",
+    onboarding_4_sub: "Deine erste filmische Verwandlung ist nur einen Fingertipp entfernt.",
+
+  next: "Weiter",
+  skip: "Überspringen",
+  start: "Starten",
+
+  welcome_back: "Willkommen zurück",
+  create_account: "Konto erstellen",
+  email: "E-Mail",
+  password: "Passwort",
+  name: "Dein Name",
+  log_in: "Anmelden",
+  sign_up: "Registrieren",
+  continue_google: "Mit Google fortfahren",
+  forgot_password: "Passwort vergessen?",
+  reset_password: "Passwort zurücksetzen",
+  have_account: "Du hast bereits ein Konto? Anmelden",
+  no_account: "Noch kein Konto? Registrieren",
+  or: "oder",
+
+  hi: "Hallo",
+  home_lead: "Bereit für filmische Magie?",
+  take_photo: "Foto aufnehmen",
+  upload_photo: "Foto hochladen",
+  popular_effects: "Beliebte Effekte",
+  recent_projects: "Letzte Projekte",
+  no_projects: "Noch keine Projekte – erstelle dein erstes!",
+  view_all: "Alle anzeigen",
+  premium_banner_title: "Cinematic Pro freischalten",
+  premium_banner_sub: "Unbegrenzte FX, HD-Export, kein Wasserzeichen.",
+  upgrade: "Upgraden",
+
+  effects: "Effekte",
+  all: "Alle",
+  face: "Gesicht",
+  vehicle: "Fahrzeug",
+  house: "Haus",
+  object: "Objekt",
+  apply_effect: "Effekt anwenden",
+
+  processing_title: "Filmische Magie wird erstellt",
+  processing_sub: "Unsere KI erstellt dein Meisterwerk…",
+
+  result_title: "Fertig!",
+  save_gallery: "Speichern",
+  share: "Teilen",
+  done: "Fertig",
+  before: "Vorher",
+  after: "Nachher",
+
+  history: "Verlauf",
+  favorites: "Favoriten",
+  search: "Effekte suchen…",
+  empty_history: "Noch keine Aufnahmen",
+  empty_history_sub: "Deine Kreationen erscheinen hier.",
+  delete: "Löschen",
+
+  premium: "Premium",
+  monthly: "Monatlich",
+  yearly: "Jährlich",
+  face_plan: "Face Effects Premium",
+  face_plan_desc: "Unbegrenzte Gesichtseffekte, HD-Export, kein Wasserzeichen, Prioritäts-KI, unbegrenzter Verlauf",
+  ultimate_plan: "Ultimate Premium",
+  ultimate_plan_desc: "Alles aus Face + Fahrzeuge, Häuser, Objekte, unbegrenzte KI, Prioritätsserver",
+  per_month: "/Monat",
+  per_year: "/Jahr",
+  most_popular: "Am beliebtesten",
+  subscribe: "Abonnieren",
+  restore_purchases: "Käufe wiederherstellen",
+  cancel_subscription: "Abonnement kündigen",
+  active_plan: "Aktiver Tarif",
+
+  settings: "Einstellungen",
+  preferences: "Einstellungen",
+  language: "Sprache",
+  dark_mode: "Darstellung",
+  system: "System",
+  light: "Hell",
+  dark: "Dunkel",
+  notifications: "Benachrichtigungen",
+  account: "Konto",
+  privacy: "Datenschutzerklärung",
+  terms: "Nutzungsbedingungen",
+  support: "Support",
+  logout: "Abmelden",
+  delete_account: "Konto löschen",
+  delete_account_confirm: "Dein Konto und alle Projekte werden dauerhaft gelöscht. Fortfahren?",
+  yes: "Ja",
+  cancel: "Abbrechen",
+
+  tab_home: "Startseite",
+  tab_effects: "Effekte",
+  tab_history: "Verlauf",
+  tab_premium: "Premium",
+  tab_settings: "Einstellungen",
+
+  generate: "Erstellen",
+  processing: "Wird verarbeitet…",
+  permission_camera: "Kamerazugriff ist erforderlich",
+  permission_media: "Zugriff auf die Mediathek ist erforderlich",
+  open_settings: "Einstellungen öffnen",
+  error_generic: "Etwas ist schiefgelaufen",
+  retry: "Erneut versuchen",
+  close: "Schließen",
+  premium_required: "Premium erforderlich",
+  premium_required_sub: "Upgrade deinen Tarif, um diesen Effekt freizuschalten.",
+  saved: "In der Galerie gespeichert",
+
+  credits_free: "kostenloses Guthaben",
+  credits_free_plural: "kostenlose Guthaben",
+  credits_left: "übrig",
+  paywall_title: "Unbegrenzte FX freischalten",
+  paywall_sub: "Du hast dein kostenloses Guthaben aufgebraucht. Upgrade auf Premium, um ohne Limits weiterzumachen.",
+  paywall_cta: "Premium holen",
+  paywall_later: "Vielleicht später",
+},
 } as const;
 
 export type TranslationKey = keyof typeof dict.en;
@@ -263,6 +460,7 @@ function detectDeviceLang(): Lang {
     const locales = getLocales();
     const code = (locales?.[0]?.languageCode || "en").toLowerCase();
     if (code.startsWith("ru")) return "ru";
+    if (code.startsWith("de")) return "de";
     return "en";
   } catch {
     return "en";
@@ -276,7 +474,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     (async () => {
       const stored = await storage.getItem<string>(KEY, "");
-      if (stored === "en" || stored === "ru") setLangState(stored);
+      if (stored === "en" || stored === "ru" || stored === "de") setLangState(stored);
       else setLangState(detectDeviceLang());
       setReady(true);
     })();

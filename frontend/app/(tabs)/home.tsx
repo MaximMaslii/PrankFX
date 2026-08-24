@@ -9,6 +9,14 @@ import * as Haptics from "expo-haptics";
 
 import { useTheme } from "@/src/theme/ThemeProvider";
 import { useI18n } from "@/src/i18n/I18nProvider";
+import {
+  getEffectDisplayName,
+  getEffectName,
+} from "@/src/i18n/effectNames";
+import {
+  getCollectionName,
+  getCollectionSubtitle,
+} from "@/src/i18n/collectionNames";
 import { useAuth } from "@/src/auth/AuthProvider";
 import { CategoryItem, CreditsInfo, EffectItem, EffectsAPI, ProjectListItem, ProjectsAPI, SubAPI } from "@/src/api/client";
 import { CreateFlow } from "@/src/utils/createFlow";
@@ -20,7 +28,7 @@ import { FontSize, FontWeight, Radius, Spacing } from "@/src/theme/tokens";
 
 export default function Home() {
   const { colors } = useTheme();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { user } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -188,7 +196,7 @@ export default function Home() {
         <View style={{ marginTop: Spacing.xl, paddingHorizontal: Spacing.xl }}>
           <View style={styles.sectionInline}>
             <Ionicons name="flash" size={16} color={colors.brand} />
-            <Text style={[styles.sectionKicker, { color: colors.brand }]}>EFFECT OF THE DAY</Text>
+            <Text style={[styles.sectionKicker, { color: colors.brand }]}>{t("effect_of_the_day")}</Text>
           </View>
           <Pressable
             testID={`daily-${dailyEffect.id}`}
@@ -204,11 +212,11 @@ export default function Home() {
             <View style={styles.dailyBottom}>
               <View style={styles.dailyBadge}>
                 <Ionicons name="sparkles" size={12} color="#fff" />
-                <Text style={styles.dailyBadgeText}>Today{"\u2019"}s pick</Text>
+                <Text style={styles.dailyBadgeText}>{t("todays_pick")}</Text>
               </View>
               <Text style={styles.dailyEmoji}>{dailyEffect.emoji}</Text>
-              <Text style={styles.dailyName}>{dailyEffect.name}</Text>
-              <Text style={styles.dailySub}>Tap to try this cinematic effect →</Text>
+              <Text style={styles.dailyName}>{getEffectName(dailyEffect.id, lang, dailyEffect.name)}</Text>
+              <Text style={styles.dailySub}>{t("tap_to_try_effect")}</Text>
             </View>
           </Pressable>
         </View>
@@ -237,7 +245,7 @@ export default function Home() {
       )}
 
       {/* Discover — curated collections */}
-      <SectionHeader title="Discover" />
+      <SectionHeader title={t("discover")} />
       <FlatList
         data={COLLECTIONS}
         keyExtractor={(c) => c.id}
@@ -261,8 +269,8 @@ export default function Home() {
                 <Ionicons name="sparkles" size={10} color="#fff" />
                 <Text style={styles.collectionCountText}>{item.effectIds.length} FX</Text>
               </View>
-              <Text numberOfLines={1} style={styles.collectionTitle}>{item.title}</Text>
-              <Text numberOfLines={1} style={styles.collectionSub}>{item.subtitle}</Text>
+              <Text numberOfLines={1} style={styles.collectionTitle}>{getCollectionName(item.id, lang, item.title)}</Text>
+              <Text numberOfLines={1} style={styles.collectionSub}>{getCollectionSubtitle(item.id, lang, item.subtitle)}</Text>
             </View>
           </Pressable>
         )}
@@ -289,7 +297,13 @@ export default function Home() {
             />
             <View style={styles.popularBottom}>
               <Text style={styles.popularEmoji}>{item.emoji}</Text>
-              <Text numberOfLines={1} style={styles.popularName}>{item.name}</Text>
+              <Text numberOfLines={1} style={styles.popularName}>
+                {getEffectDisplayName(
+                  item.id,
+                  lang,
+                  getEffectName(item.id, lang, item.name)
+                )}
+              </Text>
             </View>
           </Pressable>
         )}

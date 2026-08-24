@@ -19,22 +19,22 @@ const PRICES = {
 };
 
 const FACE_PERKS = [
-  "Unlimited Face Effects",
-  "HD Export",
-  "No Watermark",
-  "Priority AI Processing",
-  "Unlimited History",
-];
+  "unlimited_face_effects",
+  "hd_export",
+  "no_watermark",
+  "priority_ai_processing",
+  "unlimited_history",
+] 
 
 const ULT_PERKS = [
-  "Everything in Face Premium",
-  "Vehicle Effects",
-  "House Effects",
-  "Object Effects",
-  "Future Premium Effects",
-  "Unlimited AI Generations",
-  "Priority Servers",
-];
+  "everything_face_premium",
+  "vehicle_effects",
+  "house_effects",
+  "object_effects",
+  "future_premium_effects",
+  "unlimited_ai_generations",
+  "priority_servers",
+] 
 
 export default function PremiumScreen() {
   const { colors } = useTheme();
@@ -52,7 +52,7 @@ export default function PremiumScreen() {
     try {
       await SubAPI.mockActivate(tier, interval);
       await refresh();
-      Toast.success("Premium activated!");
+      Toast.success(t("premium_activated"));
     } catch (e: any) {
       Toast.error(e?.message || t("error_generic"));
     } finally {
@@ -65,7 +65,7 @@ export default function PremiumScreen() {
     try {
       const r = await SubAPI.restore();
       await refresh();
-      Toast.success(r.is_premium ? "Purchases restored" : "No active subscription");
+      Toast.success(r.is_premium ? t("purchases_restored") : t("no_active_subscription"));
     } catch (e: any) {
       Toast.error(e?.message || t("error_generic"));
     } finally {
@@ -78,7 +78,7 @@ export default function PremiumScreen() {
     try {
       await SubAPI.cancel();
       await refresh();
-      Toast.success("Subscription canceled");
+      Toast.success(t("subscription_canceled"));
     } catch (e: any) {
       Toast.error(e?.message || t("error_generic"));
     } finally {
@@ -95,8 +95,8 @@ export default function PremiumScreen() {
           <View style={[styles.crown, { backgroundColor: colors.brand }]}>
             <Ionicons name="diamond" size={26} color="#fff" />
           </View>
-          <Text style={[styles.h1, { color: colors.onSurface }]}>Unlock Cinematic Pro</Text>
-          <Text style={[styles.sub, { color: colors.onSurfaceTertiary }]}>Premium AI effects with no limits</Text>
+          <Text style={[styles.h1, { color: colors.onSurface }]}>{t("premium")}</Text>
+          <Text style={[styles.sub, { color: colors.onSurfaceTertiary }]}>{t("premium_subtitle")}</Text>
         </View>
 
         {/* Interval toggle */}
@@ -114,7 +114,7 @@ export default function PremiumScreen() {
                   {k === "month" ? t("monthly") : t("yearly")}
                 </Text>
                 {k === "year" && (
-                  <View style={styles.saveTag}><Text style={styles.saveTagText}>-33%</Text></View>
+                  <Text style={styles.saveTagText}>{t("save_percent")}</Text>
                 )}
               </Pressable>
             );
@@ -163,7 +163,7 @@ export default function PremiumScreen() {
         </Pressable>
 
         <Text style={[styles.disclaimer, { color: colors.onSurfaceTertiary }]}>
-          This is a demo subscription. In production, RevenueCat / Stripe handles real billing.
+          {t("demo_subscription")}
         </Text>
       </ScrollView>
 
@@ -182,6 +182,7 @@ export default function PremiumScreen() {
 
 function PlanCard({ title, price, suffix, perks, active, onPress, highlight, badge, testID }:
   { title: string; price: string; suffix: string; perks: string[]; active: boolean; onPress: () => void; highlight?: boolean; badge?: string; testID?: string }) {
+  const { t } = useI18n();
   const { colors } = useTheme();
   return (
     <Pressable testID={testID} onPress={onPress} style={{ marginBottom: Spacing.md }}>
@@ -203,7 +204,7 @@ function PlanCard({ title, price, suffix, perks, active, onPress, highlight, bad
         {perks.map((p, i) => (
           <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 }}>
             <Ionicons name="checkmark-circle" size={16} color={active ? "#fff" : colors.brand} />
-            <Text style={[styles.perk, { color: active ? "#fff" : colors.onSurface }]}>{p}</Text>
+            <Text style={[styles.perk, { color: active ? "#fff" : colors.onSurface }]}>{t(p as any)}</Text>
           </View>
         ))}
       </LinearGradient>
