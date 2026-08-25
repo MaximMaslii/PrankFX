@@ -27,7 +27,7 @@ export default function Login() {
 
   const submit = async () => {
     if (!email || !password) {
-      Toast.error("Please enter email and password");
+      Toast.error(t("enter_email_password"));
       return;
     }
     setSubmitting(true);
@@ -59,7 +59,7 @@ export default function Login() {
       }, {});
       const session_id = (parsed.queryParams?.session_id as string) || hash.session_id;
       if (!session_id) {
-        Toast.error("No session id in redirect");
+        Toast.error(t("no_session_id"));
         return;
       }
       await loginWithGoogleSession(session_id);
@@ -85,7 +85,7 @@ export default function Login() {
             <Ionicons name="sparkles" size={32} color="#fff" />
           </View>
           <Text style={[styles.brand, { color: colors.onSurface }]}>PrankFX</Text>
-          <Text style={[styles.tag, { color: colors.onSurfaceTertiary }]}>Cinematic AI Effects</Text>
+          <Text style={[styles.tag, { color: colors.onSurfaceTertiary }]}>{t("cinematic_ai_effects")}</Text>
         </View>
 
         <Text style={[styles.title, { color: colors.onSurface }]}>{t("welcome_back")}</Text>

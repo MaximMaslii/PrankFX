@@ -7,13 +7,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/src/theme/ThemeProvider";
 import { useI18n } from "@/src/i18n/I18nProvider";
+import { getEffectName } from "@/src/i18n/effectNames";
 import { CreateFlow } from "@/src/utils/createFlow";
 import { pickFromGallery, takePhoto } from "@/src/utils/picker";
 import { FontSize, FontWeight, Radius, Spacing } from "@/src/theme/tokens";
 
 export default function PickSource() {
   const { colors } = useTheme();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const effect = CreateFlow.getEffect();
@@ -31,9 +32,14 @@ export default function PickSource() {
         <Ionicons name="chevron-back" size={26} color={colors.onSurface} />
       </Pressable>
 
-      <Text style={[styles.h1, { color: colors.onSurface }]}>Select a photo</Text>
+      <Text style={[styles.h1, { color: colors.onSurface }]}>{t("select_photo")}</Text>
       <Text style={[styles.sub, { color: colors.onSurfaceTertiary }]}>
-        Applying: <Text style={{ color: colors.brand, fontWeight: FontWeight.bold }}>{effect?.effect_name || "—"}</Text>
+        {t("applying")}{" "}
+        <Text style={{ color: colors.brand, fontWeight: FontWeight.bold }}>
+          {effect?.effect_id
+            ? getEffectName(effect.effect_id, lang, effect.effect_name || "—")
+            : effect?.effect_name || "—"}
+        </Text>
       </Text>
 
       <View style={styles.actions}>

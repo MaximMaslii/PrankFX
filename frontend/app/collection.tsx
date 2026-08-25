@@ -8,15 +8,23 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
 import { useTheme } from "@/src/theme/ThemeProvider";
+import { useI18n } from "@/src/i18n/I18nProvider";
+import { getEffectName } from "@/src/i18n/effectNames";
 import { useAuth } from "@/src/auth/AuthProvider";
 import { CategoryItem, EffectsAPI } from "@/src/api/client";
 import { getCollectionById } from "@/src/utils/collections";
 import { getEffectThumb } from "@/src/utils/images";
 import { CreateFlow } from "@/src/utils/createFlow";
 import { FontSize, FontWeight, Radius, Spacing } from "@/src/theme/tokens";
+import {
+  getCollectionName,
+  getCollectionSubtitle,
+} from "@/src/i18n/collectionNames";
+
 
 export default function CollectionScreen() {
   const { colors } = useTheme();
+  const { lang, t } = useI18n();
   const { user } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -67,7 +75,7 @@ export default function CollectionScreen() {
   if (!collection) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ color: colors.onSurface }}>Collection not found</Text>
+        <Text style={{ color: colors.onSurface }}>{t("collection_not_found")}</Text>
       </View>
     );
   }
@@ -90,8 +98,13 @@ export default function CollectionScreen() {
             <Ionicons name="sparkles" size={12} color="#fff" />
             <Text style={styles.chipText}>{collection.effectIds.length} FX</Text>
           </View>
-          <Text style={styles.heroTitle}>{collection.title}</Text>
-          <Text style={styles.heroSub}>{collection.subtitle}</Text>
+          <Text style={styles.heroTitle}>
+            {getCollectionName(collection.id, lang, collection.title)}
+          </Text>
+
+          <Text style={styles.heroSub}>
+            {getCollectionSubtitle(collection.id, lang, collection.subtitle)}
+          </Text>
         </View>
       </View>
 
@@ -119,7 +132,9 @@ export default function CollectionScreen() {
               )}
               <View style={styles.cardBottom}>
                 <Text style={{ fontSize: 20 }}>{item.emoji}</Text>
-                <Text numberOfLines={2} style={styles.cardName}>{item.name}</Text>
+                <Text numberOfLines={2} style={styles.cardName}>
+                  {getEffectName(item.id, lang, item.name)}
+                </Text>
               </View>
             </Pressable>
           );

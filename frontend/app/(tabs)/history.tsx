@@ -9,6 +9,7 @@ import * as Haptics from "expo-haptics";
 
 import { useTheme } from "@/src/theme/ThemeProvider";
 import { useI18n } from "@/src/i18n/I18nProvider";
+import { getEffectName } from "@/src/i18n/effectNames";
 import { ProjectListItem, ProjectsAPI } from "@/src/api/client";
 import { toDataUri } from "@/src/utils/images";
 import { Toast } from "@/src/components/Toast";
@@ -16,7 +17,7 @@ import { FontSize, FontWeight, Radius, Spacing } from "@/src/theme/tokens";
 
 export default function History() {
   const { colors } = useTheme();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -128,7 +129,9 @@ export default function History() {
               >
                 <Ionicons name="trash-outline" size={18} color="#fff" />
               </Pressable>
-              <Text numberOfLines={1} style={styles.name}>{item.effect_name}</Text>
+              <Text numberOfLines={1} style={styles.name}>
+                {getEffectName(item.effect_id, lang, item.effect_name)}
+              </Text>
             </Pressable>
           )}
         />

@@ -9,6 +9,10 @@ import * as Haptics from "expo-haptics";
 
 import { useTheme } from "@/src/theme/ThemeProvider";
 import { useI18n } from "@/src/i18n/I18nProvider";
+import {
+  getEffectCategoryName,
+  getEffectName,
+} from "@/src/i18n/effectNames";
 import { useAuth } from "@/src/auth/AuthProvider";
 import { CategoryItem, EffectsAPI } from "@/src/api/client";
 import { CreateFlow } from "@/src/utils/createFlow";
@@ -17,7 +21,7 @@ import { FontSize, FontWeight, Radius, Spacing } from "@/src/theme/tokens";
 
 export default function PickEffect() {
   const { colors } = useTheme();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { user } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -68,7 +72,7 @@ export default function PickEffect() {
           <Pressable testID="pick-effect-back" onPress={() => router.back()} style={styles.back}>
             <Ionicons name="chevron-back" size={26} color={colors.onSurface} />
           </Pressable>
-          <Text style={[styles.h1, { color: colors.onSurface }]}>Choose effect</Text>
+          <Text style={[styles.h1, { color: colors.onSurface }]}>{t("choose_effect")}</Text>
         </View>
 
         {source?.base64 ? (
@@ -94,7 +98,7 @@ export default function PickEffect() {
                 style={[styles.chip, { borderColor: a ? colors.brand : colors.border, backgroundColor: a ? colors.brand : colors.surfaceSecondary }]}
               >
                 <Text style={{ fontSize: 14 }}>{c.emoji}</Text>
-                <Text style={{ color: a ? "#fff" : colors.onSurface, fontWeight: FontWeight.semibold }}>{c.name}</Text>
+                <Text style={{ color: a ? "#fff" : colors.onSurface, fontWeight: FontWeight.semibold }}>{getEffectCategoryName(c.id, lang, c.name)}</Text>
               </Pressable>
             );
           })}
@@ -124,7 +128,7 @@ export default function PickEffect() {
               )}
               <View style={styles.cardBottom}>
                 <Text style={{ fontSize: 20 }}>{item.emoji}</Text>
-                <Text numberOfLines={2} style={styles.cardName}>{item.name}</Text>
+                <Text numberOfLines={2} style={styles.cardName}>{getEffectName(item.id, lang, item.name)}</Text>
               </View>
             </Pressable>
           );

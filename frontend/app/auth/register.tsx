@@ -25,7 +25,7 @@ export default function Register() {
 
   const submit = async () => {
     if (!email || password.length < 6) {
-      Toast.error("Password must be at least 6 characters");
+      Toast.error(t("password_min_length"));
       return;
     }
     setSubmitting(true);

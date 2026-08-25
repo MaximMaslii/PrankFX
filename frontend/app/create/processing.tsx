@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/src/theme/ThemeProvider";
 import { useI18n } from "@/src/i18n/I18nProvider";
+import { getEffectName } from "@/src/i18n/effectNames";
 import { GenAPI, SubAPI } from "@/src/api/client";
 import { CreateFlow } from "@/src/utils/createFlow";
 import { toDataUri } from "@/src/utils/images";
@@ -16,7 +17,7 @@ import { FontSize, FontWeight, Radius, Spacing } from "@/src/theme/tokens";
 
 export default function Processing() {
   const { colors } = useTheme();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -24,7 +25,9 @@ export default function Processing() {
 
   const source = CreateFlow.getSource();
   const effect = CreateFlow.getEffect();
-
+  const localizedEffectName = effect?.effect_id
+    ? getEffectName(effect.effect_id, lang, effect.effect_name || "—")
+    : effect?.effect_name || "—";
   const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
@@ -56,7 +59,7 @@ export default function Processing() {
     if (generating) return;
 
     if (!source?.base64 || !effect?.effect_id) {
-      Toast.error("Missing image or effect");
+      Toast.error(t("missing_image_or_effect"));
       router.replace("/home");
       return;
     }
@@ -127,7 +130,7 @@ export default function Processing() {
             textAlign: "center",
           }}
         >
-          Missing image or effect
+          {t("missing_image_or_effect")}
         </Text>
 
         <Pressable
@@ -146,7 +149,7 @@ export default function Processing() {
               fontWeight: FontWeight.bold,
             }}
           >
-            Go Home
+            {t("go_home")}
           </Text>
         </Pressable>
       </View>
@@ -185,7 +188,7 @@ export default function Processing() {
         </Pressable>
 
         <Text style={styles.headerTitle}>
-          {effect.effect_name}
+          {localizedEffectName}
         </Text>
 
         <View style={styles.headerButton} />
@@ -242,17 +245,17 @@ export default function Processing() {
             </Text>
 
             <Text style={styles.effectName}>
-              {effect.effect_name}
+              {localizedEffectName}
             </Text>
           </>
         ) : (
           <>
             <Text style={styles.title}>
-              Ready to create?
+              {t("ready_to_create")}
             </Text>
 
             <Text style={styles.sub}>
-              Apply {effect.effect_name} to this photo
+              {t("apply_effect_to_photo").replace("{effect}", localizedEffectName)}
             </Text>
 
             <Pressable
@@ -273,7 +276,7 @@ export default function Processing() {
                 />
 
                 <Text style={styles.generateText}>
-                  Generate
+                  {t("generate")}
                 </Text>
               </LinearGradient>
             </Pressable>

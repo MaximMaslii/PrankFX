@@ -41,7 +41,7 @@ export default function Forgot() {
         </Pressable>
 
         <Text style={[styles.title, { color: colors.onSurface }]}>{t("reset_password")}</Text>
-        <Text style={[styles.sub, { color: colors.onSurfaceTertiary }]}>Enter the email you registered with. We'll send reset instructions.</Text>
+        <Text style={[styles.sub, { color: colors.onSurfaceTertiary }]}>{t("reset_password_sub")}</Text>
 
         <View style={[styles.input, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
           <Ionicons name="mail" size={18} color={colors.onSurfaceTertiary} />

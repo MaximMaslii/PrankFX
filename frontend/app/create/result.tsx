@@ -8,6 +8,7 @@ import * as Haptics from "expo-haptics";
 
 import { useTheme } from "@/src/theme/ThemeProvider";
 import { useI18n } from "@/src/i18n/I18nProvider";
+import { getEffectName } from "@/src/i18n/effectNames";
 import { GenAPI, ProjectFull, ProjectsAPI } from "@/src/api/client";
 import { BeforeAfterSlider } from "@/src/components/BeforeAfterSlider";
 import { CreateFlow } from "@/src/utils/createFlow";
@@ -18,7 +19,7 @@ import { FontSize, FontWeight, Radius, Spacing } from "@/src/theme/tokens";
 
 export default function Result() {
   const { colors } = useTheme();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ pid?: string }>();
@@ -184,7 +185,11 @@ export default function Result() {
           <Pressable testID="result-back" onPress={() => router.replace("/home")} style={styles.back}>
             <Ionicons name="chevron-back" size={26} color={colors.onSurface} />
           </Pressable>
-          <Text style={[styles.title, { color: colors.onSurface }]}>{project?.effect_name || t("result_title")}</Text>
+          <Text style={[styles.title, { color: colors.onSurface }]}>
+            {project?.effect_id
+              ? getEffectName(project.effect_id, lang, project.effect_name || t("result_title"))
+              : t("result_title")}
+          </Text>
           <Pressable testID="result-favorite" onPress={toggleFav} disabled={loading} style={styles.back}>
             <Ionicons name={project?.is_favorite ? "heart" : "heart-outline"} size={24} color={project?.is_favorite ? colors.error : colors.onSurface} />
           </Pressable>
@@ -200,7 +205,7 @@ export default function Result() {
         )}
 
         <Text style={[styles.hint, { color: colors.onSurfaceTertiary }]}>
-          👆 Drag the slider to compare
+          {t("compare_slider_hint")}
         </Text>
 
         {/* Share row */}
@@ -294,7 +299,7 @@ export default function Result() {
       )}
         
         <Text style={[styles.saveText, { color: colors.onSurface }]}>
-          {loading ? "AI is creating a new version..." : "Regenerate"}
+          {loading ? t("ai_creating_version") : t("regenerate")}
         </Text>
       </View>
     </Pressable>
