@@ -46,6 +46,8 @@ class GenerateService:
 
         required_tier = effect["premium_tier"]
 
+        # Premium users do NOT consume free credits.
+        # They only need the correct subscription tier.
         if is_premium:
             if (
                 premium_tier == "face_effects"
@@ -55,19 +57,23 @@ class GenerateService:
                     "Premium tier required: ultimate"
                 )
 
+            reserved_credit = False
+
         else:
-            # Free users can only use effects explicitly marked as free.
+            # Free users can only use effects explicitly
+            # marked as free.
             if required_tier != "free":
                 raise PermissionError(
                     "Premium subscription required"
                 )
 
-        reserved_credit = await self.users.reserve_free_credit(user_id)
+            # Reserve one free credit for this generation.
+            reserved_credit = await self.users.reserve_free_credit(user_id)
 
-        if not reserved_credit:
-            raise PermissionError(
-                "Free credits exhausted"
-            )
+            if not reserved_credit:
+                raise PermissionError(
+                    "Free credits exhausted"
+                )
 
         # -------------------------------------------------
         # 4. Generate image with Gemini
@@ -78,7 +84,8 @@ class GenerateService:
                 prompt=effect["prompt"],
             )
         except Exception:
-            if not is_premium:
+            # Refund only if a free credit was actually reserved.
+            if reserved_credit:
                 await self.users.refund_free_credit(user_id)
             raise
 

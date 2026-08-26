@@ -78,6 +78,13 @@ export default function Processing() {
         return;
       }
 
+      console.log("PRANKFX GENERATE:", {
+        effect_id: effect.effect_id,
+        effect_name: effect.effect_name,
+        credits,
+      });
+
+
       const result = await GenAPI.generate(
         source.base64,
         effect.effect_id,
@@ -91,6 +98,8 @@ export default function Processing() {
         params: { pid: result.project_id },
       });
     } catch (e: any) {
+      console.log("PRANKFX GENERATE ERROR:", e);
+
       if (e?.status === 402) {
         setGenerating(false);
 
