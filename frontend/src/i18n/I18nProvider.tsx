@@ -4,7 +4,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { getLocales } from "expo-localization";
 import { storage } from "@/src/utils/storage";
-import { effectNames } from "./effectNames";
+
 
 export type Lang = "en" | "ru" | "de";
 
@@ -164,6 +164,7 @@ const dict = {
     premium_required: "Premium required",
     premium_required_sub: "Upgrade to unlock this effect.",
     saved: "Saved to gallery",
+    deleted: "Deleted",
     // Credits paywall
     credits_free: "free credit",
     credits_free_plural: "free credits",
@@ -317,6 +318,7 @@ const dict = {
     premium_required: "Требуется Premium",
     premium_required_sub: "Обновите план, чтобы открыть эффект.",
     saved: "Сохранено в галерею",
+    deleted: "Удалено",
     credits_free: "бесплатный кредит",
     credits_free_plural: "бесплатных кредитов",
     credits_left: "осталось",
@@ -480,6 +482,7 @@ const dict = {
   premium_required: "Premium erforderlich",
   premium_required_sub: "Upgrade deinen Tarif, um diesen Effekt freizuschalten.",
   saved: "In der Galerie gespeichert",
+  deleted: "Gelöscht",
 
   credits_free: "kostenloses Guthaben",
   credits_free_plural: "kostenlose Guthaben",

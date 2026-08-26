@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { StyleSheet, Text, View, PanResponder, LayoutChangeEvent, Animated } from "react-native";
+import { StyleSheet, Text, View, LayoutChangeEvent, Animated } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/src/theme/ThemeProvider";
@@ -20,19 +20,7 @@ export function BeforeAfterSlider({ beforeUri, afterUri, aspect = 1 }: Props) {
   const posRef = useRef(0.5);
   const anim = useRef(new Animated.Value(0.5)).current;
 
-  const responder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderMove: (_evt, gesture) => {
-        if (!width) return;
-        // treat locationX of gesture: use moveX minus card offset — we use gesture x0 + dx
-        const x = gesture.moveX; // absolute; requires offset — simpler: use gestureState via touch
-        // Use last known via measure alternative — fallback: normalize by pageX relative to card
-      },
-    })
-  ).current;
-
+  
   // Simpler responder using event locationX
   const handleTouch = (e: any) => {
     if (!width) return;

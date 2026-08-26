@@ -167,13 +167,19 @@ export default function Result() {
   };
 
   const del = async () => {
-    if (!project) return;
+    if (!project || loading) return;
+
     try {
+      setLoading(true);
+
       await ProjectsAPI.remove(project.project_id);
-      Toast.success("Deleted");
+
+      Toast.success(t("deleted"));
       router.replace("/history");
     } catch (e: any) {
       Toast.error(e?.message || t("error_generic"));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -303,6 +309,33 @@ export default function Result() {
         </Text>
       </View>
     </Pressable>
+  
+  {/* Delete */}
+  <Pressable
+    testID="delete-btn"
+    onPress={del}
+    disabled={loading}
+    style={{ marginTop: Spacing.md, opacity: loading ? 0.5 : 1 }}
+  >
+    <View
+      style={[
+        styles.saveBtn,
+        {
+          backgroundColor: colors.surfaceSecondary,
+          borderColor: colors.border,
+        },
+      ]}
+    >
+      <Ionicons
+        name="trash-outline"
+        size={20}
+        color={colors.error}
+      />
+      <Text style={[styles.saveText, { color: colors.error }]}>
+        {t("delete")}
+      </Text>
+    </View>
+  </Pressable>
 
   {/* Try Another Effect */}
   <Pressable
