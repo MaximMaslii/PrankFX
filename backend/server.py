@@ -45,3 +45,10 @@ async def root():
         "status": "ok",
         "service": "PrankFX API",
     }
+
+@app.get("/api/")
+async def api_root():
+    return {
+        "status": "ok",
+        "service": "PrankFX API",
+    }

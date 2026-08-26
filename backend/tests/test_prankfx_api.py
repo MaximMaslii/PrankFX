@@ -4,6 +4,7 @@ import requests
 import pytest
 
 
+
 # ---------- Health ----------
 class TestHealth:
     def test_root(self, api_url):
@@ -40,11 +41,26 @@ class TestAuthEmail:
         r = requests.post(f"{api_url}/auth/register", json={"email": email, "password": "Whatever123!"}, timeout=30)
         assert r.status_code == 409, r.text
 
-    def test_login_demo(self, api_url, demo_credentials):
-        r = requests.post(f"{api_url}/auth/login", json=demo_credentials, timeout=30)
+    def test_login_registered_user(self, api_url):
+        email = TestAuthEmail.reg_state.get("email")
+        assert email, "prior registration test must have set email"
+
+        password = "SecurePass123!"
+
+        r = requests.post(
+            f"{api_url}/auth/login",
+            json={
+                "email": email,
+                "password": password,
+            },
+            timeout=30,
+        )
+
         assert r.status_code == 200, r.text
+
         data = r.json()
-        assert data["user"]["email"] == demo_credentials["email"]
+
+        assert data["user"]["email"] == email.lower()
         assert "token" in data
 
     def test_login_wrong_password(self, api_url, demo_credentials):

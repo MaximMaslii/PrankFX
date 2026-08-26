@@ -11,15 +11,32 @@ from PIL import Image
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
-BASE_URL = os.environ["EXPO_PUBLIC_BACKEND_URL"].rstrip("/") if os.environ.get("EXPO_PUBLIC_BACKEND_URL") else None
+BASE_URL = (
+    os.environ.get("EXPO_PUBLIC_BACKEND_URL", "").strip().rstrip("/")
+)
+
 if not BASE_URL:
-    # fallback to frontend .env
-    fe_env = Path("/app/frontend/.env")
+    # Fallback to frontend .env
+    project_root = Path(__file__).resolve().parents[2]
+    fe_env = project_root / "frontend" / ".env"
+
     if fe_env.exists():
-        for line in fe_env.read_text().splitlines():
+        for line in fe_env.read_text(encoding="utf-8").splitlines():
             if line.startswith("EXPO_PUBLIC_BACKEND_URL="):
-                BASE_URL = line.split("=", 1)[1].strip().strip('"').rstrip("/")
+                BASE_URL = (
+                    line.split("=", 1)[1]
+                    .strip()
+                    .strip('"')
+                    .strip("'")
+                    .rstrip("/")
+                )
                 break
+
+if not BASE_URL:
+    raise RuntimeError(
+        "EXPO_PUBLIC_BACKEND_URL is not configured. "
+        "Set it in backend/.env or frontend/.env."
+    )
 
 API = f"{BASE_URL}/api"
 

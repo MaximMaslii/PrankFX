@@ -29,6 +29,43 @@ class UserRepository:
         )
 
     @staticmethod
+    async def reserve_free_credit(user_id: str):
+        return await db.users.find_one_and_update(
+            {
+                "user_id": user_id,
+                "$expr": {
+                    "$lt": [
+                        "$free_credits_used",
+                        "$free_credits_total",
+                    ]
+                },
+            },
+            {
+                "$inc": {
+                    "free_credits_used": 1,
+                }
+            },
+            projection={"_id": 0},
+            return_document=True,
+        )
+
+    @staticmethod
+    async def refund_free_credit(user_id: str):
+        return await db.users.find_one_and_update(
+            {
+                "user_id": user_id,
+                "free_credits_used": {"$gt": 0},
+            },
+            {
+                "$inc": {
+                    "free_credits_used": -1,
+                }
+            },
+            projection={"_id": 0},
+            return_document=True,
+        )
+
+    @staticmethod
     async def delete(user_id: str):
         return await db.users.delete_one(
             {"user_id": user_id},

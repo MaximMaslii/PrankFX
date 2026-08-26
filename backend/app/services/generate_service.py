@@ -56,29 +56,31 @@ class GenerateService:
                 )
 
         else:
-            free_used = user.get("free_credits_used", 0)
-            free_total = user.get("free_credits_total", 1)
-
-            if free_used >= free_total:
+            # Free users can only use effects explicitly marked as free.
+            if required_tier != "free":
                 raise PermissionError(
-                    "Free credits exhausted"
+                    "Premium subscription required"
                 )
 
-            # Reserve the free credit before generation.
-            await self.users.update(
-                user_id,
-                {
-                    "free_credits_used": free_used + 1,
-                },
+        reserved_credit = await self.users.reserve_free_credit(user_id)
+
+        if not reserved_credit:
+            raise PermissionError(
+                "Free credits exhausted"
             )
 
         # -------------------------------------------------
         # 4. Generate image with Gemini
         # -------------------------------------------------
-        result_image = await self.gemini.edit_image(
-            image_base64=data.image_base64,
-            prompt=effect["prompt"],
-        )
+        try:
+            result_image = await self.gemini.edit_image(
+                image_base64=data.image_base64,
+                prompt=effect["prompt"],
+            )
+        except Exception:
+            if not is_premium:
+                await self.users.refund_free_credit(user_id)
+            raise
 
         # -------------------------------------------------
         # 5. Create project
