@@ -290,7 +290,7 @@ export default function Home() {
         </Pressable>
       </View>
 
-      {/* Credits */}
+      {/* FX Balance */}
       {(credits || user) && (
         <View
           style={{
@@ -298,109 +298,74 @@ export default function Home() {
             marginBottom: Spacing.lg,
           }}
         >
-          {isPremium ? (
+          <Pressable
+            testID="home-fx-balance"
+            onPress={() => router.push("/premium")}
+            style={[
+              styles.fxChip,
+              {
+                backgroundColor: colors.surfaceSecondary,
+                borderColor: colors.border,
+              },
+            ]}
+          >
             <View
               style={[
-                styles.creditChip,
-                {
-                  backgroundColor: colors.brand,
-                  borderColor: colors.brand,
-                },
+                styles.fxIcon,
+                { backgroundColor: colors.brand },
               ]}
             >
               <Ionicons
-                name="diamond"
-                size={16}
+                name="flash"
+                size={14}
                 color="#fff"
               />
-
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={styles.creditChipTextLight}
-                >
-                  {premiumTier === "ultimate"
-                    ? "Ultimate"
-                    : "Face Effects"}
-                </Text>
-
-                <Text
-                  style={styles.creditSubTextLight}
-                >
-                  Unlimited AI creations
-                </Text>
-              </View>
             </View>
-          ) : (
-            <Pressable
-              testID="home-credits"
-              onPress={() => {
-                if (remaining <= 0) {
-                  setPaywallOpen(true);
-                }
-              }}
+
+            <View style={{ flex: 1 }}>
+              <Text
+                style={[
+                  styles.fxTitle,
+                  { color: colors.onSurface },
+                ]}
+              >
+                FX Balance
+              </Text>
+
+              <Text
+                style={[
+                  styles.fxSubtitle,
+                  { color: colors.onSurfaceTertiary },
+                ]}
+              >
+                1 generation = 1 FX
+              </Text>
+            </View>
+
+            <Text
               style={[
-                styles.creditChip,
-                {
-                  backgroundColor:
-                    colors.surfaceSecondary,
-                  borderColor: colors.border,
-                },
+                styles.fxAmount,
+                { color: colors.onSurface },
               ]}
             >
-              <Ionicons
-                name={
-                  remaining > 0
-                    ? "flash"
-                    : "lock-closed"
-                }
-                size={16}
-                color={
-                  remaining > 0
-                    ? colors.brand
-                    : colors.onSurfaceTertiary
-                }
-              />
+              {credits?.fx_credits ?? 0}
+            </Text>
 
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={[
-                    styles.creditChipText,
-                    {
-                      color: colors.onSurface,
-                    },
-                  ]}
-                >
-                  Free credits
-                </Text>
+            <Text
+              style={[
+                styles.fxLabel,
+                { color: colors.brand },
+              ]}
+            >
+              FX
+            </Text>
 
-                <Text
-                  style={[
-                    styles.creditSubText,
-                    {
-                      color:
-                        colors.onSurfaceTertiary,
-                    },
-                  ]}
-                >
-                  {remaining} / {totalCredits}{" "}
-                  available
-                </Text>
-              </View>
-
-              {remaining <= 0 && (
-                <Text
-                  style={{
-                    color: colors.brand,
-                    fontWeight:
-                      FontWeight.semibold,
-                    fontSize: FontSize.sm,
-                  }}
-                >
-                  {t("upgrade")}
-                </Text>
-              )}
-            </Pressable>
-          )}
+            <Ionicons
+              name="chevron-forward"
+              size={16}
+              color={colors.onSurfaceTertiary}
+            />
+          </Pressable>
         </View>
       )}
 
@@ -984,6 +949,46 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semibold,
   },
+
+  fxChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 10,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+  },
+
+  fxIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  fxTitle: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semibold,
+  },
+
+  fxSubtitle: {
+    fontSize: FontSize.xs,
+    marginTop: 2,
+  },
+
+  fxAmount: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+  },
+
+  fxLabel: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.bold,
+    marginLeft: -6,
+  },
+
 
   creditChipTextLight: {
     color: "#fff",

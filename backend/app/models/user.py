@@ -15,4 +15,5 @@ class User:
     premium_tier: Optional[str]
     free_credits_used: int
     free_credits_total: int
+    fx_credits: int
     created_at: datetime

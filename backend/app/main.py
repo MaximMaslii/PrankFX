@@ -9,11 +9,16 @@ from app.routers.effects import router as effects_router
 from app.routers.projects import router as projects_router
 from app.routers.generate import router as generate_router
 from app.routers.subscription import router as subscription_router
+from app.services.migration_service import migrate_fx_credits
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Run database migrations on startup.
+    await migrate_fx_credits()
+
     yield
+
     await close_database()
 
 

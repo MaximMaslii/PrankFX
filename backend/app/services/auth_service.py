@@ -32,6 +32,7 @@ class AuthService:
             premium_tier=user.get("premium_tier"),
             free_credits_used=user.get("free_credits_used", 0),
             free_credits_total=user.get("free_credits_total", 1),
+            fx_credits=user.get("fx_credits", 0),
             created_at=user["created_at"],
         )
 
@@ -52,8 +53,16 @@ class AuthService:
             "picture": None,
             "is_premium": False,
             "premium_tier": None,
+
+            # Legacy free-credit fields.
+            # Kept for backward compatibility.
             "free_credits_used": 0,
             "free_credits_total": 1,
+
+            # New PrankFX FX balance.
+            # Every new user gets 1 free FX.
+            "fx_credits": 1,
+
             "created_at": utc_now(),
         }
 

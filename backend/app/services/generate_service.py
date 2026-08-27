@@ -39,41 +39,14 @@ class GenerateService:
             raise ValueError("User not found")
 
         # -------------------------------------------------
-        # 3. Check subscription / credits
+        # 3. Reserve exactly 1 FX credit
         # -------------------------------------------------
-        is_premium = user.get("is_premium", False)
-        premium_tier = user.get("premium_tier")
+        reserved_credit = await self.users.reserve_fx_credit(user_id)
 
-        required_tier = effect["premium_tier"]
-
-        # Premium users do NOT consume free credits.
-        # They only need the correct subscription tier.
-        if is_premium:
-            if (
-                premium_tier == "face_effects"
-                and required_tier == "ultimate"
-            ):
-                raise PermissionError(
-                    "Premium tier required: ultimate"
-                )
-
-            reserved_credit = False
-
-        else:
-            # Free users can only use effects explicitly
-            # marked as free.
-            if required_tier != "free":
-                raise PermissionError(
-                    "Premium subscription required"
-                )
-
-            # Reserve one free credit for this generation.
-            reserved_credit = await self.users.reserve_free_credit(user_id)
-
-            if not reserved_credit:
-                raise PermissionError(
-                    "Free credits exhausted"
-                )
+        if not reserved_credit:
+            raise PermissionError(
+                "Not enough FX credits"
+            )
 
         # -------------------------------------------------
         # 4. Generate image with Gemini
@@ -83,10 +56,10 @@ class GenerateService:
                 image_base64=data.image_base64,
                 prompt=effect["prompt"],
             )
+
         except Exception:
-            # Refund only if a free credit was actually reserved.
-            if reserved_credit:
-                await self.users.refund_free_credit(user_id)
+            # Refund the FX credit if generation failed.
+            await self.users.refund_fx_credit(user_id)
             raise
 
         # -------------------------------------------------

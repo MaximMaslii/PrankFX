@@ -29,20 +29,21 @@ class UserRepository:
         )
 
     @staticmethod
-    async def reserve_free_credit(user_id: str):
+    async def reserve_fx_credit(user_id: str):
+        """
+        Atomically reserve exactly 1 FX credit.
+
+        Returns the updated user document when successful.
+        Returns None when the user has no FX credits.
+        """
         return await db.users.find_one_and_update(
             {
                 "user_id": user_id,
-                "$expr": {
-                    "$lt": [
-                        "$free_credits_used",
-                        "$free_credits_total",
-                    ]
-                },
+                "fx_credits": {"$gt": 0},
             },
             {
                 "$inc": {
-                    "free_credits_used": 1,
+                    "fx_credits": -1,
                 }
             },
             projection={"_id": 0},
@@ -50,20 +51,61 @@ class UserRepository:
         )
 
     @staticmethod
-    async def refund_free_credit(user_id: str):
+    async def refund_fx_credit(user_id: str):
+        """
+        Return exactly 1 FX credit after a failed generation.
+        """
         return await db.users.find_one_and_update(
             {
                 "user_id": user_id,
-                "free_credits_used": {"$gt": 0},
             },
             {
                 "$inc": {
-                    "free_credits_used": -1,
+                    "fx_credits": 1,
                 }
             },
             projection={"_id": 0},
             return_document=True,
         )
+
+    @staticmethod
+    async def add_fx_credits(user_id: str, amount: int):
+        """
+        Add purchased FX credits to the user's balance.
+        """
+        if amount <= 0:
+            raise ValueError("FX credit amount must be positive")
+
+        return await db.users.find_one_and_update(
+            {
+                "user_id": user_id,
+            },
+            {
+                "$inc": {
+                    "fx_credits": amount,
+                }
+            },
+            projection={"_id": 0},
+            return_document=True,
+        )
+
+    @staticmethod
+    async def get_fx_credits(user_id: str):
+        """
+        Return the current FX balance.
+        """
+        user = await db.users.find_one(
+            {"user_id": user_id},
+            {
+                "_id": 0,
+                "fx_credits": 1,
+            },
+        )
+
+        if not user:
+            return None
+
+        return user.get("fx_credits", 0)
 
     @staticmethod
     async def delete(user_id: str):
@@ -77,4 +119,5 @@ class UserRepository:
             {"email": email},
             {"_id": 1},
         )
+
         return user is not None

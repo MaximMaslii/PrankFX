@@ -24,6 +24,9 @@ class SubscriptionService:
         interval: str,
     ) -> dict:
 
+        # Legacy endpoint kept temporarily for compatibility.
+        # New PrankFX monetization uses FX credit packs.
+
         if tier not in ("face_effects", "ultimate"):
             raise ValueError("Invalid subscription tier")
 
@@ -84,13 +87,34 @@ class SubscriptionService:
         if not user:
             raise ValueError("User not found")
 
-        total = user.get("free_credits_total", 1)
-        used = user.get("free_credits_used", 0)
+        free_credits_used = user.get(
+            "free_credits_used",
+            0,
+        )
+
+        free_credits_total = user.get(
+            "free_credits_total",
+            1,
+        )
 
         return {
-            "is_premium": user.get("is_premium", False),
-            "premium_tier": user.get("premium_tier"),
-            "free_credits_used": used,
-            "free_credits_total": total,
-            "free_credits_remaining": max(total - used, 0),
+            "is_premium": user.get(
+                "is_premium",
+                False,
+            ),
+            "premium_tier": user.get(
+                "premium_tier",
+            ),
+
+            "free_credits_used": free_credits_used,
+            "free_credits_total": free_credits_total,
+            "free_credits_remaining": max(
+                free_credits_total - free_credits_used,
+                0,
+            ),
+
+            "fx_credits": user.get(
+                "fx_credits",
+                0,
+            ),
         }
