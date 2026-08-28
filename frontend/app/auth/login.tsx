@@ -15,10 +15,15 @@ import { FontSize, FontWeight, Radius, Spacing } from "@/src/theme/tokens";
 
 export default function Login() {
   const { colors } = useTheme();
-  const { t } = useI18n();
+  const { t, lang, setLang } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { loginWithEmail, loginWithGoogleSession, loading } = useAuth();
+  const languages = [
+    { id: "en" as const, label: "EN" },
+    { id: "ru" as const, label: "RU" },
+    { id: "de" as const, label: "DE" },
+  ];
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -80,6 +85,44 @@ export default function Login() {
         contentContainerStyle={[styles.wrap, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }]}
         keyboardShouldPersistTaps="handled"
       >
+
+        <View
+          style={[
+            styles.languageSwitcher,
+            {
+              backgroundColor: colors.surfaceSecondary,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          {languages.map((item) => (
+            <Pressable
+              key={item.id}
+              onPress={() => setLang(item.id)}
+              style={[
+                styles.languageItem,
+                lang === item.id && {
+                  backgroundColor: colors.brand,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.languageText,
+                  {
+                    color:
+                      lang === item.id
+                        ? "#fff"
+                        : colors.onSurfaceTertiary,
+                  },
+                ]}
+              >
+                {item.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
         <View style={styles.logoWrap}>
           <View style={[styles.logo, { backgroundColor: colors.brand }]}>
             <Ionicons name="sparkles" size={32} color="#fff" />
@@ -152,6 +195,28 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
+  languageSwitcher: {
+    alignSelf: "flex-end",
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: Radius.lg,
+    padding: 3,
+  },
+
+  languageItem: {
+    minWidth: 38,
+    height: 32,
+    borderRadius: Radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Spacing.sm,
+  },
+
+  languageText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semibold,
+  },
   wrap: { paddingHorizontal: Spacing.xl, gap: Spacing.md },
   logoWrap: { alignItems: "center", marginBottom: Spacing.xl2 },
   logo: {

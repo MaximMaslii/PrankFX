@@ -68,20 +68,22 @@ export default function Processing() {
       setGenerating(true);
 
       // Check credits before sending the image to Gemini.
-      const credits = await SubAPI.credits();
+      const fxBalance = await SubAPI.fxBalance();
 
-      if (!credits.is_premium && credits.free_credits_remaining <= 0) {
+      if (fxBalance.fx_credits <= 0) {
         setGenerating(false);
+
         router.replace({
           pathname: "/premium",
         });
+
         return;
       }
 
       console.log("PRANKFX GENERATE:", {
         effect_id: effect.effect_id,
         effect_name: effect.effect_name,
-        credits,
+        fx_credits: fxBalance.fx_credits,
       });
 
 
