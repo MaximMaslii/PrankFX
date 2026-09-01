@@ -28,6 +28,10 @@ class ForgotIn(BaseModel):
 class GoogleSessionIn(BaseModel):
 
     session_id: str
+    
+class GoogleLoginIn(BaseModel):
+
+    token: str    
 
 
 class UserOut(BaseModel):

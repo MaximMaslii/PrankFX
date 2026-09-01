@@ -4,6 +4,7 @@ from app.schemas.auth import (
     RegisterIn,
     LoginIn,
     ForgotIn,
+    GoogleLoginIn,
     AuthResponse,
     UserOut,
 )
@@ -54,6 +55,19 @@ async def login(body: LoginIn):
             detail=str(e),
         )
 
+@router.post(
+    "/google",
+    response_model=AuthResponse,
+)
+async def google_login(body: GoogleLoginIn):
+    try:
+        return await auth_service.google_login(body.token)
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+        )
 
 @router.post(
     "/forgot",

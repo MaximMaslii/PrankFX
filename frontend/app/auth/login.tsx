@@ -1,9 +1,20 @@
 import React, { useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
-import * as Linking from "expo-linking";
+import * as Google from "expo-auth-session/providers/google";
+import * as AuthSession from "expo-auth-session";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/src/theme/ThemeProvider";
@@ -11,14 +22,53 @@ import { useI18n } from "@/src/i18n/I18nProvider";
 import { useAuth } from "@/src/auth/AuthProvider";
 import { GradientButton } from "@/src/components/GradientButton";
 import { Toast } from "@/src/components/Toast";
-import { FontSize, FontWeight, Radius, Spacing } from "@/src/theme/tokens";
+import {
+  FontSize,
+  FontWeight,
+  Radius,
+  Spacing,
+} from "@/src/theme/tokens";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function Login() {
   const { colors } = useTheme();
   const { t, lang, setLang } = useI18n();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { loginWithEmail, loginWithGoogleSession, loading } = useAuth();
+
+  const {
+    loginWithEmail,
+    loginWithGoogle,
+    loading,
+  } = useAuth();
+
+  // Google OAuth redirect URI
+  const googleRedirectUri = AuthSession.makeRedirectUri({
+    native:
+      "com.googleusercontent.apps.917307607930-5mulp0qe4b55gvhrno6qbnvmh2a2e1sc:/oauthredirect",
+  });
+
+  console.log("GOOGLE REDIRECT URI:", googleRedirectUri);
+
+  const [request, response, promptAsync] =
+    Google.useIdTokenAuthRequest({
+      androidClientId:
+        "917307607930-5mulp0qe4b55gvhrno6qbnvmh2a2e1sc.apps.googleusercontent.com",
+
+      iosClientId:
+        "917307607930-u5kaei1ktf64c8f7h5r6rq7io6hv5gbr.apps.googleusercontent.com",
+
+      webClientId:
+        "917307607930-q5916sbm39ga8bctlvumir4h3jmp4c34.apps.googleusercontent.com",
+
+      redirectUri: googleRedirectUri,
+
+      extraParams: {
+        prompt: "select_account",
+      },
+    });
+
   const languages = [
     { id: "en" as const, label: "EN" },
     { id: "ru" as const, label: "RU" },
@@ -30,14 +80,21 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  // --------------------------------------------------
+  // EMAIL LOGIN
+  // --------------------------------------------------
+
   const submit = async () => {
     if (!email || !password) {
       Toast.error(t("enter_email_password"));
       return;
     }
+
     setSubmitting(true);
+
     try {
       await loginWithEmail(email.trim(), password);
+
       router.replace("/home");
     } catch (e: any) {
       Toast.error(e?.message || t("error_generic"));
@@ -46,69 +103,187 @@ export default function Login() {
     }
   };
 
+  // --------------------------------------------------
+  // GOOGLE LOGIN
+  // --------------------------------------------------
+
   const googleLogin = async () => {
+    console.log("GOOGLE: starting");
+
     setGoogleLoading(true);
+
     try {
-      const redirectUrl = Linking.createURL("");
-      const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
-      if (result.type !== "success" || !result.url) {
-        setGoogleLoading(false);
+      if (!request) {
+        console.log("GOOGLE: request is not ready");
+        Toast.error("Google authorization is not ready");
         return;
       }
-      const parsed = Linking.parse(result.url);
-      const hash = (result.url.split("#")[1] || "").split("&").reduce<Record<string, string>>((acc, kv) => {
-        const [k, v] = kv.split("=");
-        if (k) acc[k] = decodeURIComponent(v || "");
-        return acc;
-      }, {});
-      const session_id = (parsed.queryParams?.session_id as string) || hash.session_id;
-      if (!session_id) {
-        Toast.error(t("no_session_id"));
+
+      console.log("GOOGLE REQUEST URL:", request.url);
+      console.log("GOOGLE REQUEST REDIRECT:", request.redirectUri);
+
+      const result = await promptAsync();
+
+      console.log(
+        "GOOGLE RESULT:",
+        JSON.stringify(result, null, 2)
+      );
+
+      if (result.type !== "success") {
+        console.log(
+          "GOOGLE: authorization was not successful:",
+          result.type
+        );
         return;
       }
-      await loginWithGoogleSession(session_id);
+
+      const code = result.params?.code;
+
+      console.log(
+        "GOOGLE CODE:",
+        code ? "RECEIVED" : "NOT RECEIVED"
+      );
+
+      if (!code) {
+        Toast.error("Google authorization code not received");
+        return;
+      }
+
+      if (!request.codeVerifier) {
+        console.log("GOOGLE: code verifier is missing");
+        Toast.error("Google PKCE verifier is missing");
+        return;
+      }
+
+      console.log("GOOGLE: exchanging code for tokens...");
+
+      const tokenResponse =
+        await new AuthSession.AccessTokenRequest({
+          clientId:
+            "917307607930-5mulp0qe4b55gvhrno6qbnvmh2a2e1sc.apps.googleusercontent.com",
+
+          redirectUri: request.redirectUri,
+
+          code,
+
+          scopes: [
+            "openid",
+            "https://www.googleapis.com/auth/userinfo.profile",
+            "https://www.googleapis.com/auth/userinfo.email",
+          ],
+
+          extraParams: {
+            code_verifier: request.codeVerifier,
+          },
+        }).performAsync(Google.discovery);
+
+      console.log(
+        "GOOGLE TOKEN RESPONSE:",
+        JSON.stringify(
+          {
+            accessToken: tokenResponse.accessToken
+              ? "RECEIVED"
+              : "NOT RECEIVED",
+            idToken: tokenResponse.idToken
+              ? "RECEIVED"
+              : "NOT RECEIVED",
+          },
+          null,
+          2
+        )
+      );
+
+      const idToken = tokenResponse.idToken;
+
+      if (!idToken) {
+        console.log("GOOGLE: ID TOKEN NOT RECEIVED");
+        Toast.error("Google ID token not received");
+        return;
+      }
+
+      console.log("GOOGLE: ID TOKEN RECEIVED");
+      console.log("GOOGLE: sending token to backend");
+
+      await loginWithGoogle(idToken);
+
+      console.log("GOOGLE: backend login successful");
+      console.log("GOOGLE: navigating to HOME");
+
       router.replace("/home");
+
     } catch (e: any) {
+      console.log("GOOGLE ERROR:", e);
+      console.log("GOOGLE ERROR MESSAGE:", e?.message);
+
       Toast.error(e?.message || t("error_generic"));
     } finally {
       setGoogleLoading(false);
     }
   };
 
+  // --------------------------------------------------
+  // UI
+  // --------------------------------------------------
+
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.surface }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={{
+        flex: 1,
+        backgroundColor: colors.surface,
+      }}
+      behavior={
+        Platform.OS === "ios"
+          ? "padding"
+          : undefined
+      }
     >
       <ScrollView
-        contentContainerStyle={[styles.wrap, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 }]}
+        contentContainerStyle={[
+          styles.wrap,
+          {
+            paddingTop:
+              insets.top + 40,
+
+            paddingBottom:
+              insets.bottom + 40,
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
       >
+
+        {/* LANGUAGE SWITCHER */}
 
         <View
           style={[
             styles.languageSwitcher,
             {
-              backgroundColor: colors.surfaceSecondary,
-              borderColor: colors.border,
+              backgroundColor:
+                colors.surfaceSecondary,
+
+              borderColor:
+                colors.border,
             },
           ]}
         >
           {languages.map((item) => (
             <Pressable
               key={item.id}
-              onPress={() => setLang(item.id)}
+              onPress={() =>
+                setLang(item.id)
+              }
               style={[
                 styles.languageItem,
+
                 lang === item.id && {
-                  backgroundColor: colors.brand,
+                  backgroundColor:
+                    colors.brand,
                 },
               ]}
             >
               <Text
                 style={[
                   styles.languageText,
+
                   {
                     color:
                       lang === item.id
@@ -123,23 +298,99 @@ export default function Login() {
           ))}
         </View>
 
+        {/* LOGO */}
+
         <View style={styles.logoWrap}>
-          <View style={[styles.logo, { backgroundColor: colors.brand }]}>
-            <Ionicons name="sparkles" size={32} color="#fff" />
+          <View
+            style={[
+              styles.logo,
+              {
+                backgroundColor:
+                  colors.brand,
+              },
+            ]}
+          >
+            <Ionicons
+              name="sparkles"
+              size={32}
+              color="#fff"
+            />
           </View>
-          <Text style={[styles.brand, { color: colors.onSurface }]}>PrankFX</Text>
-          <Text style={[styles.tag, { color: colors.onSurfaceTertiary }]}>{t("cinematic_ai_effects")}</Text>
+
+          <Text
+            style={[
+              styles.brand,
+              {
+                color:
+                  colors.onSurface,
+              },
+            ]}
+          >
+            PrankFX
+          </Text>
+
+          <Text
+            style={[
+              styles.tag,
+              {
+                color:
+                  colors.onSurfaceTertiary,
+              },
+            ]}
+          >
+            {t("cinematic_ai_effects")}
+          </Text>
         </View>
 
-        <Text style={[styles.title, { color: colors.onSurface }]}>{t("welcome_back")}</Text>
+        {/* TITLE */}
 
-        <View style={[styles.input, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
-          <Ionicons name="mail" size={18} color={colors.onSurfaceTertiary} />
+        <Text
+          style={[
+            styles.title,
+            {
+              color:
+                colors.onSurface,
+            },
+          ]}
+        >
+          {t("welcome_back")}
+        </Text>
+
+        {/* EMAIL */}
+
+        <View
+          style={[
+            styles.input,
+            {
+              backgroundColor:
+                colors.surfaceSecondary,
+
+              borderColor:
+                colors.border,
+            },
+          ]}
+        >
+          <Ionicons
+            name="mail"
+            size={18}
+            color={
+              colors.onSurfaceTertiary
+            }
+          />
+
           <TextInput
             testID="login-email-input"
-            style={[styles.textInput, { color: colors.onSurface }]}
+            style={[
+              styles.textInput,
+              {
+                color:
+                  colors.onSurface,
+              },
+            ]}
             placeholder={t("email")}
-            placeholderTextColor={colors.onSurfaceTertiary}
+            placeholderTextColor={
+              colors.onSurfaceTertiary
+            }
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
@@ -147,35 +398,122 @@ export default function Login() {
             onChangeText={setEmail}
           />
         </View>
-        <View style={[styles.input, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
-          <Ionicons name="lock-closed" size={18} color={colors.onSurfaceTertiary} />
+
+        {/* PASSWORD */}
+
+        <View
+          style={[
+            styles.input,
+            {
+              backgroundColor:
+                colors.surfaceSecondary,
+
+              borderColor:
+                colors.border,
+            },
+          ]}
+        >
+          <Ionicons
+            name="lock-closed"
+            size={18}
+            color={
+              colors.onSurfaceTertiary
+            }
+          />
+
           <TextInput
             testID="login-password-input"
-            style={[styles.textInput, { color: colors.onSurface }]}
+            style={[
+              styles.textInput,
+              {
+                color:
+                  colors.onSurface,
+              },
+            ]}
             placeholder={t("password")}
-            placeholderTextColor={colors.onSurfaceTertiary}
+            placeholderTextColor={
+              colors.onSurfaceTertiary
+            }
             secureTextEntry
             value={password}
             onChangeText={setPassword}
           />
         </View>
 
-        <Pressable testID="login-forgot" onPress={() => router.push("/auth/forgot")} style={styles.forgot}>
-          <Text style={[styles.forgotText, { color: colors.brand }]}>{t("forgot_password")}</Text>
+        {/* FORGOT PASSWORD */}
+
+        <Pressable
+          testID="login-forgot"
+          onPress={() =>
+            router.push("/auth/forgot")
+          }
+          style={styles.forgot}
+        >
+          <Text
+            style={[
+              styles.forgotText,
+              {
+                color:
+                  colors.brand,
+              },
+            ]}
+          >
+            {t("forgot_password")}
+          </Text>
         </Pressable>
+
+        {/* EMAIL LOGIN BUTTON */}
 
         <GradientButton
           testID="login-submit-button"
           label={t("log_in")}
           onPress={submit}
-          loading={submitting || loading}
+          loading={
+            submitting || loading
+          }
         />
 
-        <View style={styles.dividerWrap}>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <Text style={[styles.dividerText, { color: colors.onSurfaceTertiary }]}>{t("or")}</Text>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        {/* DIVIDER */}
+
+        <View
+          style={
+            styles.dividerWrap
+          }
+        >
+          <View
+            style={[
+              styles.dividerLine,
+              {
+                backgroundColor:
+                  colors.border,
+              },
+            ]}
+          />
+
+          <Text
+            style={[
+              styles.dividerText,
+              {
+                color:
+                  colors.onSurfaceTertiary,
+              },
+            ]}
+          >
+            {t("or")}
+          </Text>
+
+          <View
+            style={[
+              styles.dividerLine,
+              {
+                backgroundColor:
+                  colors.border,
+              },
+            ]}
+          />
         </View>
+
+        {/* GOOGLE LOGIN BUTTON */}
 
         <GradientButton
           testID="login-google-button"
@@ -183,16 +521,49 @@ export default function Login() {
           label={t("continue_google")}
           onPress={googleLogin}
           loading={googleLoading}
-          icon={<Ionicons name="logo-google" size={18} color={colors.onSurface} />}
+          icon={
+            <Ionicons
+              name="logo-google"
+              size={18}
+              color={
+                colors.onSurface
+              }
+            />
+          }
         />
 
-        <Pressable testID="login-goto-signup" onPress={() => router.push("/auth/register")} style={styles.switch}>
-          <Text style={[styles.switchText, { color: colors.onSurfaceTertiary }]}>{t("no_account")}</Text>
+        {/* SIGN UP */}
+
+        <Pressable
+          testID="login-goto-signup"
+          onPress={() =>
+            router.push(
+              "/auth/register"
+            )
+          }
+          style={styles.switch}
+        >
+          <Text
+            style={[
+              styles.switchText,
+              {
+                color:
+                  colors.onSurfaceTertiary,
+              },
+            ]}
+          >
+            {t("no_account")}
+          </Text>
         </Pressable>
+
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
+
+// --------------------------------------------------
+// STYLES
+// --------------------------------------------------
 
 const styles = StyleSheet.create({
   languageSwitcher: {
@@ -210,34 +581,138 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: Spacing.sm,
+    paddingHorizontal:
+      Spacing.sm,
   },
 
   languageText: {
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.semibold,
+    fontWeight:
+      FontWeight.semibold,
   },
-  wrap: { paddingHorizontal: Spacing.xl, gap: Spacing.md },
-  logoWrap: { alignItems: "center", marginBottom: Spacing.xl2 },
+
+  wrap: {
+    paddingHorizontal:
+      Spacing.xl,
+    gap: Spacing.md,
+  },
+
+  logoWrap: {
+    alignItems: "center",
+    marginBottom:
+      Spacing.xl2,
+  },
+
   logo: {
-    width: 76, height: 76, borderRadius: 22,
-    alignItems: "center", justifyContent: "center", marginBottom: Spacing.md,
-    shadowColor: "#FF3B30", shadowOpacity: 0.4, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 6,
+    width: 76,
+    height: 76,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.md,
+
+    shadowColor: "#FF3B30",
+    shadowOpacity: 0.4,
+    shadowRadius: 14,
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+
+    elevation: 6,
   },
-  brand: { fontSize: FontSize.xl3, fontWeight: FontWeight.heavy, letterSpacing: -0.5 },
-  tag: { fontSize: FontSize.base, marginTop: 4 },
-  title: { fontSize: FontSize.xl2, fontWeight: FontWeight.bold, marginBottom: Spacing.md },
+
+  brand: {
+    fontSize:
+      FontSize.xl3,
+    fontWeight:
+      FontWeight.heavy,
+    letterSpacing: -0.5,
+  },
+
+  tag: {
+    fontSize:
+      FontSize.base,
+    marginTop: 4,
+  },
+
+  title: {
+    fontSize:
+      FontSize.xl2,
+    fontWeight:
+      FontWeight.bold,
+    marginBottom:
+      Spacing.md,
+  },
+
   input: {
-    flexDirection: "row", alignItems: "center", gap: Spacing.md,
-    borderRadius: Radius.md, borderWidth: 1,
-    paddingHorizontal: Spacing.lg, height: 54,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+
+    borderRadius:
+      Radius.md,
+
+    borderWidth: 1,
+
+    paddingHorizontal:
+      Spacing.lg,
+
+    height: 54,
   },
-  textInput: { flex: 1, fontSize: FontSize.md, paddingVertical: 0 },
-  forgot: { alignSelf: "flex-end", padding: Spacing.xs, marginBottom: Spacing.md },
-  forgotText: { fontSize: FontSize.base, fontWeight: FontWeight.semibold },
-  dividerWrap: { flexDirection: "row", alignItems: "center", gap: Spacing.md, marginVertical: Spacing.md },
-  dividerLine: { flex: 1, height: 1 },
-  dividerText: { fontSize: FontSize.sm, fontWeight: FontWeight.medium },
-  switch: { alignItems: "center", padding: Spacing.md, marginTop: Spacing.sm },
-  switchText: { fontSize: FontSize.base },
+
+  textInput: {
+    flex: 1,
+    fontSize:
+      FontSize.md,
+    paddingVertical: 0,
+  },
+
+  forgot: {
+    alignSelf: "flex-end",
+    padding:
+      Spacing.xs,
+    marginBottom:
+      Spacing.md,
+  },
+
+  forgotText: {
+    fontSize:
+      FontSize.base,
+    fontWeight:
+      FontWeight.semibold,
+  },
+
+  dividerWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    marginVertical:
+      Spacing.md,
+  },
+
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+
+  dividerText: {
+    fontSize:
+      FontSize.sm,
+    fontWeight:
+      FontWeight.medium,
+  },
+
+  switch: {
+    alignItems: "center",
+    padding:
+      Spacing.md,
+    marginTop:
+      Spacing.sm,
+  },
+
+  switchText: {
+    fontSize:
+      FontSize.base,
+  },
 });

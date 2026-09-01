@@ -236,6 +236,18 @@ export const AuthAPI = {
       false,
     ),
 
+  googleLogin: (token: string) =>
+    request<AuthResponse>(
+      "/auth/google",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          token,
+        }),
+      },
+      false,
+    ),  
+
   forgot: (email: string) =>
     request<{
       ok: boolean;
@@ -251,17 +263,6 @@ export const AuthAPI = {
       false,
     ),
 
-  googleSession: (session_id: string) =>
-    request<AuthResponse>(
-      "/auth/google/session",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          session_id,
-        }),
-      },
-      false,
-    ),
 
   me: () =>
     request<UserOut>("/auth/me"),
