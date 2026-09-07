@@ -1,0 +1,260 @@
+{
+  "app_name": "PrankFX",
+  "personality": "1 iOS-Native Clean with 6 Glass / Luxe surfaces",
+  "personality_one_liner": "A premium, Apple-quality cinematic FX tool built with deep glassmorphism, floating surfaces, and sleek cinematic gradients.",
+  "color": {
+    "surface": "#F9F9FB",
+    "onSurface": "#111111",
+    "surfaceSecondary": "#FFFFFF",
+    "onSurfaceSecondary": "#1A1A1A",
+    "surfaceTertiary": "#F0F0F5",
+    "onSurfaceTertiary": "#444444",
+    "surfaceInverse": "#0C0C0E",
+    "onSurfaceInverse": "#FFFFFF",
+    "brand": "#FF3B30",
+    "brandPrimary": "#FF3B30",
+    "onBrandPrimary": "#FFFFFF",
+    "brandSecondary": "#FF453A",
+    "onBrandSecondary": "#FFFFFF",
+    "brandTertiary": "#FFD8D6",
+    "onBrandTertiary": "#990000",
+    "success": "#34C759",
+    "onSuccess": "#FFFFFF",
+    "warning": "#FF9F0A",
+    "onWarning": "#FFFFFF",
+    "error": "#FF3B30",
+    "onError": "#FFFFFF",
+    "border": "#E5E5EA",
+    "borderStrong": "#C7C7CC",
+    "divider": "#E5E5EA",
+    "dark": {
+      "surface": "#000000",
+      "onSurface": "#FFFFFF",
+      "surfaceSecondary": "#1C1C1E",
+      "onSurfaceSecondary": "#F2F2F7",
+      "surfaceTertiary": "#2C2C2E",
+      "onSurfaceTertiary": "#AEAEB2",
+      "surfaceInverse": "#FFFFFF",
+      "onSurfaceInverse": "#000000",
+      "brand": "#FF453A",
+      "brandPrimary": "#FF453A",
+      "onBrandPrimary": "#FFFFFF",
+      "brandSecondary": "#FF3B30",
+      "onBrandSecondary": "#FFFFFF",
+      "brandTertiary": "#3B1414",
+      "onBrandTertiary": "#FFD8D6",
+      "success": "#32D74B",
+      "onSuccess": "#FFFFFF",
+      "warning": "#FF9F0A",
+      "onWarning": "#FFFFFF",
+      "error": "#FF453A",
+      "onError": "#FFFFFF",
+      "border": "#38383A",
+      "borderStrong": "#48484A",
+      "divider": "#38383A"
+    }
+  },
+  "typography": {
+    "displayFontFamily": "Geist",
+    "textFontFamily": "Geist",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24
+    }
+  },
+  "spacing": {
+    "rule": "Use generous iOS-native margins (16pt/24pt) around the screen edge. Inner component padding should be comfortable, not cramped. Floating action buttons must have safe-area clearance at the bottom.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 8,
+    "md": 16,
+    "lg": 24,
+    "pill": 999
+  },
+  "shadow_tier": "2",
+  "navigation": "bottom_tabs",
+  "icon_set": "Ionicons",
+  "glassmorphism": {
+    "enabled": true,
+    "do's": [
+      "Use heavy glass (`expo-blur`) for the floating bottom tab bar, sticky headers, and floating primary CTAs.",
+      "Apply frosted glass over featured FX cards with image backgrounds to ensure text readability.",
+      "Use glassmorphism heavily in the Subscription view for premium pricing cards.",
+      "Pair blur with a translucent tinted base (70%+ opacity) for guaranteed readability."
+    ],
+    "dont's": [
+      "Don't use glass on standard form inputs.",
+      "Don't forget the gradient-to-dark scrim pattern behind text that sits directly on imagery.",
+      "Don't stack more than 2 glass surfaces on top of each other."
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "expo-blur",
+      "android": "expo-blur",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "screens": [
+    {
+      "name": "Onboarding",
+      "purpose": "Introduce the cinematic photo transformation features across 4 full-bleed visual steps.",
+      "states": {
+        "loading": "N/A",
+        "empty": "N/A",
+        "error": "N/A"
+      },
+      "layout": "Full-bleed imagery underneath a gradient scrim. Title and subtitle positioned in the bottom 40% of the screen. A large, floating glass 'Next' button sits above the safe-area margin. Animated transitions between steps."
+    },
+    {
+      "name": "Auth",
+      "purpose": "User registration and login (Email, Apple, Google).",
+      "states": {
+        "loading": "Spinner overlaid on the CTA.",
+        "empty": "N/A",
+        "error": "Standard alert or inline red text below the offending input."
+      },
+      "layout": "Clean iOS form layout. Big Apple/Google SSO buttons stacked vertically, followed by email entry. Top-left back button."
+    },
+    {
+      "name": "Home",
+      "purpose": "Main launchpad for uploading/capturing photos and accessing top FX.",
+      "states": {
+        "loading": "Skeleton blocks for Recent Projects.",
+        "empty": "Empty state illustration in the Recent Projects section.",
+        "error": "Retry block for fetching popular effects."
+      },
+      "layout": "Header with user avatar and Settings cog. Two large side-by-side 'Camera' and 'Upload' primary action cards. Below that, a horizontal scrolling carousel of 'Popular Effects'. A 'Premium Banner' utilizing glassmorphism and the brand gradient. A grid/list of 'Recent Projects' at the bottom. Floating bottom tab bar."
+    },
+    {
+      "name": "Effects Grid",
+      "purpose": "Browse the full catalog of cinematic effects.",
+      "states": {
+        "loading": "Staggered skeleton grid.",
+        "empty": "No effects found for this category.",
+        "error": "Failed to load catalog."
+      },
+      "layout": "Sticky glass header with horizontal pill-shaped category filters (Face, Vehicle, House, Object). A 2-column masonry or symmetrical grid of effects underneath. Each card shows a thumbnail and effect name. Cards use smooth scaling on press."
+    },
+    {
+      "name": "Effect Selection Detail",
+      "purpose": "Preview a specific effect and apply it to a new photo.",
+      "states": {
+        "loading": "N/A",
+        "empty": "N/A",
+        "error": "N/A"
+      },
+      "layout": "Large hero header featuring an automated before/after looping animation or static split image. Content underneath details the effect. A sticky floating 'Apply Effect' gradient CTA at the bottom."
+    },
+    {
+      "name": "Camera/Upload",
+      "purpose": "Capture or pick a photo.",
+      "states": {
+        "loading": "N/A",
+        "empty": "N/A",
+        "error": "Permission denied fallback screen."
+      },
+      "layout": "Full-screen camera viewfinder with Apple-native aesthetic. Circular shutter button, gallery picker icon, and camera swap icon."
+    },
+    {
+      "name": "Processing",
+      "purpose": "Show AI generation progress.",
+      "states": {
+        "loading": "Lottie animation (e.g., scanning line over the image).",
+        "empty": "N/A",
+        "error": "N/A"
+      },
+      "layout": "Dark, immersive screen. Central image with a glowing scanning effect and a 'Applying Cinematic Magic...' progress text."
+    },
+    {
+      "name": "Result",
+      "purpose": "Show the transformed image with an interactive before/after slider.",
+      "states": {
+        "loading": "N/A",
+        "empty": "N/A",
+        "error": "N/A"
+      },
+      "layout": "Full-screen or large centered canvas containing the before/after slider (PanGestureHandler). Bottom row contains actions: 'Save to Gallery', 'Share' (triggers native share sheet or bottom sheet with Instagram/TikTok icons), and 'Done'."
+    },
+    {
+      "name": "History",
+      "purpose": "View, search, favorite, and delete past generations.",
+      "states": {
+        "loading": "Skeleton grid.",
+        "empty": "Illustration of an empty film reel ('No cinematic shots yet').",
+        "error": "Retry loading history."
+      },
+      "layout": "Sticky search bar at the top. Two tabs: 'All' and 'Favorites'. 2-column grid of generated images. Long-press on an image triggers a context menu to delete or share."
+    },
+    {
+      "name": "Subscription (Premium)",
+      "purpose": "Upsell the user to premium plans with animated pricing cards.",
+      "states": {
+        "loading": "Fetching IAP products.",
+        "empty": "N/A",
+        "error": "Cannot connect to App Store."
+      },
+      "layout": "Full-screen modal. Top headline ('Unlock Cinematic Pro'). Monthly/Yearly segmented control toggle. Two primary pricing cards (Face Premium vs Ultimate) arranged horizontally or stacked, with the 'Ultimate' card slightly larger, glowing, and featuring a gradient border. Sticky 'Start Free Trial' or 'Subscribe' CTA. Links for Restore, Privacy, Terms at the bottom."
+    },
+    {
+      "name": "Settings",
+      "purpose": "Manage app preferences and account.",
+      "states": {
+        "loading": "N/A",
+        "empty": "N/A",
+        "error": "N/A"
+      },
+      "layout": "iOS-native grouped list style. Sections for Preferences (Language EN/RU, Dark Mode toggle), Account (Restore Purchases, Delete Account, Logout), and Support. Chevron indicators on rows."
+    }
+  ],
+  "images": {
+    "hero_face_effect": {
+      "url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1ODR8MHwxfHNlYXJjaHwxfHxjaW5lbWF0aWMlMjBmYWNlJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzg1MzA5MDE1fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Cinematic woman face portrait for Face Effect category"
+    },
+    "hero_car_effect": {
+      "url": "https://images.unsplash.com/photo-1485291571150-772bcfc10da5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1Mjh8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBzcG9ydHMlMjBjYXJ8ZW58MHx8fHwxNzg1MzA5MDE2fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Luxury sports car for Vehicle Effect category"
+    },
+    "hero_house_effect": {
+      "url": "https://images.unsplash.com/photo-1570129477492-45c003edd2be?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODB8MHwxfHNlYXJjaHwxfHxzdWJ1cmJhbiUyMGhvdXNlfGVufDB8fHx8MTc4NTMwOTAxNXww&ixlib=rb-4.1.0&q=85",
+      "alt": "Suburban house for House Effect category"
+    },
+    "hero_explosion_effect": {
+      "url": "https://images.unsplash.com/photo-1588281345136-9893252095bd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHwxfHxjaW5lbWF0aWMlMjBleHBsb3Npb258ZW58MHx8fHwxNzg1MzA5MDE2fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Cinematic explosion for Action FX thumbnail"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Strictly adhere to the dark and light mode color palette. The app uses '1 iOS-Native Clean with 6 Glass / Luxe surfaces' for a premium, Apple-quality finish.",
+    "Implement the 'Before/After Slider' on the Result screen using React Native Reanimated and Gesture Handler (PanGestureHandler) for a smooth 60fps native feel.",
+    "The Subscription Screen MUST feature animated pricing cards. Use Reanimated to handle the toggle between Monthly and Yearly, smoothly transitioning the prices. The 'Ultimate' tier should be visually emphasized with a subtle gradient border and scale bump.",
+    "Implement a sticky bottom primary CTA pattern for 'Apply Effect' and 'Subscribe' buttons. The background of this container must use `expo-blur` (glassmorphism) so the scrolling content is visible beneath it.",
+    "Do NOT use pure black or default blue colors. The brand color is a cinematic Red-Orange (`#FF3B30`).",
+    "All images used as backgrounds or cards MUST implement the vertical gradient-to-dark scrim pattern to ensure foreground text contrast.",
+    "Include subtle haptic feedback using `expo-haptics` on slider movement, tab switching, and button presses.",
+    "Use `react-native-reanimated` for all layout transitions, such as navigating between the categories (Face/Vehicle/House/Object) in the Effects Grid."
+  ],
+  "haptics": {
+    "tab_press": "light",
+    "button_press": "medium",
+    "slider_drag": "selection",
+    "effect_select": "light",
+    "payment_success": "success"
+  }
+}
