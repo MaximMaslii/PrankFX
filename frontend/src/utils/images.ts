@@ -2,6 +2,18 @@
  * Effect thumbnail images. Uses cinematic Unsplash sources for premium look.
  * Categories map to hero images, and each specific effect uses a unique image.
  */
+import { ImageSourcePropType } from "react-native";
+
+const LOCAL_EFFECT_THUMBS: Record<string, ImageSourcePropType> = {
+  movie_bruises: require("@/assets/effects/movie_bruises.png"),
+  black_eye: require("@/assets/effects/black_eye.png"),
+  bandages: require("@/assets/effects/bandages.png"),
+  swollen_face: require("@/assets/effects/swollen_face.png"),
+  action_hero: require("@/assets/effects/action_hero.png"),
+  zombie: require("@/assets/effects/zombie.png"),
+  pirate_scar: require("@/assets/effects/pirate_scar.png"),
+};
+
 export const CATEGORY_HERO: Record<string, string> = {
   face: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&q=80",
   vehicle: "https://images.unsplash.com/photo-1485291571150-772bcfc10da5?w=800&q=80",
@@ -17,7 +29,7 @@ export const EFFECT_THUMBS: Record<string, string> = {
   swollen_face: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=600&q=70",
   action_hero: "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=600&q=70",
   zombie: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=600&q=70",
-  pirate_scar: "https://images.unsplash.com/photo-1607346256330-dee7af15f7c5?w=600&q=70",
+  pirate_scar: "https://images.unsplash.com/photo-1509909756405-be0199881695?w=600&q=70",
   comic_fight: "https://images.unsplash.com/photo-1531214288907-6d2d7b18c1eb?w=600&q=70",
   monster_attack: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=600&q=70",
   vampire_bite: "https://images.unsplash.com/photo-1509909756405-be0199881695?w=600&q=70",
@@ -66,8 +78,26 @@ export const EFFECT_THUMBS: Record<string, string> = {
   cinematic_electronics: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&q=70",
 };
 
-export function getEffectThumb(effectId: string, category?: string): string {
+export function getEffectThumb(
+  effectId: string,
+  category?: string
+): string {
   return EFFECT_THUMBS[effectId] || (category ? CATEGORY_HERO[category] : CATEGORY_HERO.face);
+}
+
+export function getEffectThumbSource(
+  effectId: string,
+  category?: string
+): number | { uri: string } {
+  const local = LOCAL_EFFECT_THUMBS[effectId];
+
+  if (local) {
+    return local as number;
+  }
+
+  return {
+    uri: getEffectThumb(effectId, category),
+  };
 }
 
 /** Turns base64 (no scheme) into a data URI usable in <Image />. */

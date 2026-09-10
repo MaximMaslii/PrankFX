@@ -17,7 +17,7 @@ import {
 
 import { CategoryItem, EffectsAPI } from "@/src/api/client";
 import { CreateFlow } from "@/src/utils/createFlow";
-import { getEffectThumb } from "@/src/utils/images";
+import { getEffectThumb, getEffectThumbSource } from "@/src/utils/images";
 import { FontSize, FontWeight, Radius, Spacing } from "@/src/theme/tokens";
 
 export default function EffectsScreen() {
@@ -130,7 +130,7 @@ export default function EffectsScreen() {
               onPress={() => selectEffect(item)}
               style={[styles.card, { backgroundColor: colors.surfaceSecondary }]}
             >
-              <Image source={{ uri: getEffectThumb(item.id, item.category) }} style={styles.cardImg} />
+              <Image source={getEffectThumbSource(item.id, item.category)} style={styles.cardImg} />
               <LinearGradient colors={["transparent", "rgba(0,0,0,0.9)"]} style={StyleSheet.absoluteFillObject} />
              
               <View style={styles.cardBottom}>

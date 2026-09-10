@@ -38,7 +38,7 @@ import {
 } from "@/src/api/client";
 import { CreateFlow } from "@/src/utils/createFlow";
 import { pickFromGallery, takePhoto } from "@/src/utils/picker";
-import { getEffectThumb, toDataUri } from "@/src/utils/images";
+import { getEffectThumbSource, toDataUri } from "@/src/utils/images";
 import { getDailyEffectId } from "@/src/utils/collections";
 import { PaywallModal } from "@/src/components/PaywallModal";
 import {
@@ -147,7 +147,7 @@ export default function Home() {
     if (noCreditsLeft) {
       Haptics.notificationAsync(
         Haptics.NotificationFeedbackType.Warning
-      ).catch(() => {});
+      ).catch(() => { });
 
       setPaywallOpen(true);
       return;
@@ -155,7 +155,7 @@ export default function Home() {
 
     Haptics.impactAsync(
       Haptics.ImpactFeedbackStyle.Medium
-    ).catch(() => {});
+    ).catch(() => { });
 
     const pick =
       source === "camera"
@@ -423,12 +423,10 @@ export default function Home() {
             ]}
           >
             <Image
-              source={{
-                uri: getEffectThumb(
-                  dailyEffect.id,
-                  dailyEffect.category
-                ),
-              }}
+              source={getEffectThumbSource(
+                dailyEffect.id,
+                dailyEffect.category
+              )}
               style={
                 StyleSheet.absoluteFillObject
               }
@@ -527,12 +525,10 @@ export default function Home() {
             ]}
           >
             <Image
-              source={{
-                uri: getEffectThumb(
-                  item.id,
-                  "face"
-                ),
-              }}
+              source={getEffectThumbSource(
+                item.id,
+                "face"
+              )}
               style={styles.popularImg}
             />
 

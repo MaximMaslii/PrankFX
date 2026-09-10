@@ -16,7 +16,7 @@ import {
 
 import { CategoryItem, EffectsAPI } from "@/src/api/client";
 import { CreateFlow } from "@/src/utils/createFlow";
-import { getEffectThumb, toDataUri } from "@/src/utils/images";
+import { getEffectThumbSource, toDataUri } from "@/src/utils/images";
 import { FontSize, FontWeight, Radius, Spacing } from "@/src/theme/tokens";
 
 export default function PickEffect() {
@@ -117,7 +117,7 @@ export default function PickEffect() {
               onPress={() => pick(item)}
               style={[styles.card, { backgroundColor: colors.surfaceSecondary }]}
             >
-              <Image source={{ uri: getEffectThumb(item.id, active) }} style={styles.cardImg} />
+              <Image source={getEffectThumbSource(item.id, active)} style={styles.cardImg} />
               <LinearGradient colors={["transparent", "rgba(0,0,0,0.85)"]} style={StyleSheet.absoluteFillObject} />
               <View style={styles.cardBottom}>
                 <Text style={{ fontSize: 20 }}>{item.emoji}</Text>

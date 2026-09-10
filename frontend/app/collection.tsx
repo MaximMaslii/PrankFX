@@ -13,7 +13,7 @@ import { getEffectName } from "@/src/i18n/effectNames";
 import { useAuth } from "@/src/auth/AuthProvider";
 import { CategoryItem, EffectsAPI } from "@/src/api/client";
 import { getCollectionById } from "@/src/utils/collections";
-import { getEffectThumb } from "@/src/utils/images";
+import { getEffectThumbSource } from "@/src/utils/images";
 import { CreateFlow } from "@/src/utils/createFlow";
 import { FontSize, FontWeight, Radius, Spacing } from "@/src/theme/tokens";
 import {
@@ -123,7 +123,7 @@ export default function CollectionScreen() {
               onPress={() => pick(item)}
               style={[styles.card, { backgroundColor: colors.surfaceSecondary }]}
             >
-              <Image source={{ uri: getEffectThumb(item.id, item.category) }} style={StyleSheet.absoluteFillObject} />
+              <Image source={getEffectThumbSource(item.id, item.category)} style={StyleSheet.absoluteFillObject} />
               <LinearGradient colors={["transparent", "rgba(0,0,0,0.85)"]} style={StyleSheet.absoluteFillObject} />
               {locked && (
                 <View style={styles.lock}>
