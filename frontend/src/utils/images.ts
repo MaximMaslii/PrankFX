@@ -12,6 +12,19 @@ const LOCAL_EFFECT_THUMBS: Record<string, ImageSourcePropType> = {
   action_hero: require("@/assets/effects/action_hero.png"),
   zombie: require("@/assets/effects/zombie.png"),
   pirate_scar: require("@/assets/effects/pirate_scar.png"),
+  comic_fight: require("@/assets/effects/comic_fight.png"),
+  monster_attack: require("@/assets/effects/monster_attack.png"),
+  vampire_bite: require("@/assets/effects/vampire_bite.png"),
+  alien_attack: require("@/assets/effects/alien_attack.png"),
+  food_fight: require("@/assets/effects/food_fight.png"),
+  robot_damage: require("@/assets/effects/robot_damage.png"),
+  cake_smash: require("@/assets/effects/cake_smash.png"),
+  fire_burn: require("@/assets/effects/fire_burn.png"),
+  ice_damage: require("@/assets/effects/ice_damage.png"),
+  magic_explosion: require("@/assets/effects/magic_explosion.png"),
+  paintball: require("@/assets/effects/paintball.png"),
+  funny_makeup: require("@/assets/effects/funny_makeup.png"),
+  hollywood_fx: require("@/assets/effects/hollywood_fx.png"), 
 };
 
 export const CATEGORY_HERO: Record<string, string> = {
