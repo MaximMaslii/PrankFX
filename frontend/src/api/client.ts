@@ -466,29 +466,11 @@ export const ProjectsAPI = {
 export const SubAPI = {
 
   // -------------------------------------------------------
-  // Legacy subscription methods.
-  // Kept temporarily for compatibility.
+  // Subscription status.
+  //
+  // There is no activate method. The endpoint it called granted premium
+  // without any payment, so it was removed on the server too.
   // -------------------------------------------------------
-
-  mockActivate: (
-    tier: "face_effects" | "ultimate",
-    interval: "month" | "year",
-  ) =>
-    request<{
-      ok: boolean;
-      tier: string;
-      interval: string;
-    }>(
-      "/subscription/mock-activate",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          tier,
-          interval,
-        }),
-      },
-    ),
-
 
   restore: () =>
     request<{
@@ -533,6 +515,11 @@ export const SubAPI = {
     ),
 
 
+  /**
+   * Dev-only top-up. The server answers 404 unless ALLOW_MOCK_PURCHASES
+   * is set, so this throws in any real build — replace with StoreKit /
+   * Play Billing before release.
+   */
   mockFXPurchase: (packId: string) =>
     request<{
       ok: boolean;

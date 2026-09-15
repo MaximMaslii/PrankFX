@@ -17,7 +17,7 @@ import {
 
 import { CategoryItem, EffectsAPI } from "@/src/api/client";
 import { CreateFlow } from "@/src/utils/createFlow";
-import { getEffectThumb, getEffectThumbSource } from "@/src/utils/images";
+import { getEffectThumbSource } from "@/src/utils/images";
 import { FontSize, FontWeight, Radius, Spacing } from "@/src/theme/tokens";
 
 export default function EffectsScreen() {
@@ -134,7 +134,6 @@ export default function EffectsScreen() {
               <LinearGradient colors={["transparent", "rgba(0,0,0,0.9)"]} style={StyleSheet.absoluteFillObject} />
              
               <View style={styles.cardBottom}>
-                <Text style={{ fontSize: 22 }}>{item.emoji}</Text>
                 <Text numberOfLines={2} style={styles.cardName}>
                   {getEffectDisplayName(
                     item.id,

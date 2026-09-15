@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.config import settings
 from app.schemas.subscription import (
     CreditsResponse,
-    MockActivateIn,
     SubscriptionResponse,
 )
 from app.security.dependencies import get_current_user
@@ -20,30 +20,14 @@ fx_service = FXService()
 
 
 # =========================================================
-# LEGACY SUBSCRIPTION ENDPOINTS
-# Kept temporarily for backward compatibility.
+# SUBSCRIPTION STATUS
+#
+# There is no activation endpoint here on purpose. The former
+# /mock-activate set is_premium=True for any authenticated caller with no
+# payment involved, which made a paid tier free to anyone who read the
+# network traffic. Premium must only ever be granted from a verified
+# App Store / Google Play receipt.
 # =========================================================
-
-@router.post(
-    "/mock-activate",
-)
-async def mock_activate(
-    body: MockActivateIn,
-    current_user: dict = Depends(get_current_user),
-):
-    try:
-        return await subscription_service.activate_mock(
-            user_id=current_user["user_id"],
-            tier=body.tier,
-            interval=body.interval,
-        )
-
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-
 
 @router.post(
     "/restore",
@@ -144,12 +128,22 @@ async def fx_mock_purchase(
     current_user: dict = Depends(get_current_user),
 ):
     """
-    Test purchase endpoint.
+    Development-only credit top-up. Charges nothing.
 
-    This does NOT charge real money.
-    It will be replaced by Apple/Google IAP
-    after the FX system is fully tested.
+    Disabled unless ALLOW_MOCK_PURCHASES is set, because an authenticated
+    but unpaid endpoint that grants FX is an unlimited free balance — and
+    every FX spent costs real money at the Gemini and Decart end.
+
+    Replace with receipt verification (App Store Server API / Google Play
+    Developer API) before shipping, and make it idempotent on
+    transaction_id so one receipt cannot be redeemed twice.
     """
+    if not settings.ALLOW_MOCK_PURCHASES:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Not found",
+        )
+
     try:
         return await fx_service.purchase_mock(
             user_id=current_user["user_id"],

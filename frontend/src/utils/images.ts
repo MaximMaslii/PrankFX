@@ -1,61 +1,63 @@
 /**
- * Effect thumbnail images. Uses cinematic Unsplash sources for premium look.
- * Categories map to hero images, and each specific effect uses a unique image.
+ * Effect thumbnails.
+ *
+ * Every effect has a bundled WebP showing the applied result. Category
+ * heroes are still remote and are only used by onboarding.
  */
 import { ImageSourcePropType } from "react-native";
 
 const LOCAL_EFFECT_THUMBS: Record<string, ImageSourcePropType> = {
-  movie_bruises: require("@/assets/effects/movie_bruises.png"),
-  black_eye: require("@/assets/effects/black_eye.png"),
-  bandages: require("@/assets/effects/bandages.png"),
-  swollen_face: require("@/assets/effects/swollen_face.png"),
-  action_hero: require("@/assets/effects/action_hero.png"),
-  zombie: require("@/assets/effects/zombie.png"),
-  pirate_scar: require("@/assets/effects/pirate_scar.png"),
-  comic_fight: require("@/assets/effects/comic_fight.png"),
-  monster_attack: require("@/assets/effects/monster_attack.png"),
-  vampire_bite: require("@/assets/effects/vampire_bite.png"),
-  alien_attack: require("@/assets/effects/alien_attack.png"),
-  food_fight: require("@/assets/effects/food_fight.png"),
-  robot_damage: require("@/assets/effects/robot_damage.png"),
-  cake_smash: require("@/assets/effects/cake_smash.png"),
-  fire_burn: require("@/assets/effects/fire_burn.png"),
-  ice_damage: require("@/assets/effects/ice_damage.png"),
-  magic_explosion: require("@/assets/effects/magic_explosion.png"),
-  paintball: require("@/assets/effects/paintball.png"),
-  funny_makeup: require("@/assets/effects/funny_makeup.png"),
-  hollywood_fx: require("@/assets/effects/hollywood_fx.png"),
-  broken_windshield: require("@/assets/effects/broken_windshield.png"),
-  heavy_scratches: require("@/assets/effects/heavy_scratches.png"),
-  mud: require("@/assets/effects/mud.png"),
-  rust: require("@/assets/effects/rust.png"),
-  burned_paint: require("@/assets/effects/burned_paint.png"),
-  police_chase: require("@/assets/effects/police_chase.png"),
-  apocalypse_car: require("@/assets/effects/apocalypse_car.png"),
-  monster_truck: require("@/assets/effects/monster_truck.png"),
-  abandoned_car: require("@/assets/effects/abandoned_car.png"),
-  flood_car: require("@/assets/effects/flood_car.png"),
-  comic_crash: require("@/assets/effects/comic_crash.png"),
-  movie_explosion: require("@/assets/effects/movie_explosion.png"),
-  car_accident: require("@/assets/effects/car_accident.png"),
-  destroyed_wall: require("@/assets/effects/destroyed_wall.png"),
-  broken_windows: require("@/assets/effects/broken_windows.png"),
-  house_flood: require("@/assets/effects/house_flood.png"),
-  house_fire: require("@/assets/effects/house_fire.png"),
-  haunted_house: require("@/assets/effects/haunted_house.png"),
-  jungle_house: require("@/assets/effects/jungle_house.png"),
-  snow_house: require("@/assets/effects/snow_house.png"),
-  post_apocalypse: require("@/assets/effects/post_apocalypse.png"),
-  hollywood_explosion: require("@/assets/effects/hollywood_explosion.png"),
-  abandoned_building: require("@/assets/effects/abandoned_building.png"),
-  cinematic_phone: require("@/assets/effects/cinematic_phone.png"),
-  cinematic_laptop: require("@/assets/effects/cinematic_laptop.png"),
-  cinematic_tv: require("@/assets/effects/cinematic_tv.png"),
-  cinematic_motorcycle: require("@/assets/effects/cinematic_motorcycle.png"),
-  cinematic_boat: require("@/assets/effects/cinematic_boat.png"),
-  cinematic_bicycle: require("@/assets/effects/cinematic_bicycle.png"),
-  cinematic_furniture: require("@/assets/effects/cinematic_furniture.png"),
-  cinematic_electronics: require("@/assets/effects/cinematic_electronics.png"),
+  movie_bruises: require("@/assets/effects/movie_bruises.webp"),
+  black_eye: require("@/assets/effects/black_eye.webp"),
+  bandages: require("@/assets/effects/bandages.webp"),
+  swollen_face: require("@/assets/effects/swollen_face.webp"),
+  action_hero: require("@/assets/effects/action_hero.webp"),
+  zombie: require("@/assets/effects/zombie.webp"),
+  pirate_scar: require("@/assets/effects/pirate_scar.webp"),
+  comic_fight: require("@/assets/effects/comic_fight.webp"),
+  monster_attack: require("@/assets/effects/monster_attack.webp"),
+  vampire_bite: require("@/assets/effects/vampire_bite.webp"),
+  alien_attack: require("@/assets/effects/alien_attack.webp"),
+  food_fight: require("@/assets/effects/food_fight.webp"),
+  robot_damage: require("@/assets/effects/robot_damage.webp"),
+  cake_smash: require("@/assets/effects/cake_smash.webp"),
+  fire_burn: require("@/assets/effects/fire_burn.webp"),
+  ice_damage: require("@/assets/effects/ice_damage.webp"),
+  magic_explosion: require("@/assets/effects/magic_explosion.webp"),
+  paintball: require("@/assets/effects/paintball.webp"),
+  funny_makeup: require("@/assets/effects/funny_makeup.webp"),
+  hollywood_fx: require("@/assets/effects/hollywood_fx.webp"),
+  broken_windshield: require("@/assets/effects/broken_windshield.webp"),
+  heavy_scratches: require("@/assets/effects/heavy_scratches.webp"),
+  mud: require("@/assets/effects/mud.webp"),
+  rust: require("@/assets/effects/rust.webp"),
+  burned_paint: require("@/assets/effects/burned_paint.webp"),
+  police_chase: require("@/assets/effects/police_chase.webp"),
+  apocalypse_car: require("@/assets/effects/apocalypse_car.webp"),
+  monster_truck: require("@/assets/effects/monster_truck.webp"),
+  abandoned_car: require("@/assets/effects/abandoned_car.webp"),
+  flood_car: require("@/assets/effects/flood_car.webp"),
+  comic_crash: require("@/assets/effects/comic_crash.webp"),
+  movie_explosion: require("@/assets/effects/movie_explosion.webp"),
+  car_accident: require("@/assets/effects/car_accident.webp"),
+  destroyed_wall: require("@/assets/effects/destroyed_wall.webp"),
+  broken_windows: require("@/assets/effects/broken_windows.webp"),
+  house_flood: require("@/assets/effects/house_flood.webp"),
+  house_fire: require("@/assets/effects/house_fire.webp"),
+  haunted_house: require("@/assets/effects/haunted_house.webp"),
+  jungle_house: require("@/assets/effects/jungle_house.webp"),
+  snow_house: require("@/assets/effects/snow_house.webp"),
+  post_apocalypse: require("@/assets/effects/post_apocalypse.webp"),
+  hollywood_explosion: require("@/assets/effects/hollywood_explosion.webp"),
+  abandoned_building: require("@/assets/effects/abandoned_building.webp"),
+  cinematic_phone: require("@/assets/effects/cinematic_phone.webp"),
+  cinematic_laptop: require("@/assets/effects/cinematic_laptop.webp"),
+  cinematic_tv: require("@/assets/effects/cinematic_tv.webp"),
+  cinematic_motorcycle: require("@/assets/effects/cinematic_motorcycle.webp"),
+  cinematic_boat: require("@/assets/effects/cinematic_boat.webp"),
+  cinematic_bicycle: require("@/assets/effects/cinematic_bicycle.webp"),
+  cinematic_furniture: require("@/assets/effects/cinematic_furniture.webp"),
+  cinematic_electronics: require("@/assets/effects/cinematic_electronics.webp"),
 };
 
 export const CATEGORY_HERO: Record<string, string> = {
@@ -65,68 +67,17 @@ export const CATEGORY_HERO: Record<string, string> = {
   object: "https://images.unsplash.com/photo-1588281345136-9893252095bd?w=800&q=80",
 };
 
-export const EFFECT_THUMBS: Record<string, string> = {
-  // Face
-  movie_bruises: "https://images.unsplash.com/photo-1520975916090-3105956dac38?w=600&q=70",
-  black_eye: "https://images.unsplash.com/photo-1541532713592-79a0317b6b77?w=600&q=70",
-  bandages: "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=600&q=70",
-  swollen_face: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=600&q=70",
-  action_hero: "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=600&q=70",
-  zombie: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=600&q=70",
-  pirate_scar: "https://images.unsplash.com/photo-1509909756405-be0199881695?w=600&q=70",
-  comic_fight: "https://images.unsplash.com/photo-1531214288907-6d2d7b18c1eb?w=600&q=70",
-  monster_attack: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=600&q=70",
-  vampire_bite: "https://images.unsplash.com/photo-1509909756405-be0199881695?w=600&q=70",
-  alien_attack: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&q=70",
-  robot_damage: "https://images.unsplash.com/photo-1535378620166-273708d44e4c?w=600&q=70",
-  fire_burn: "https://images.unsplash.com/photo-1523875194681-bedd468c58bf?w=600&q=70",
-  ice_damage: "https://images.unsplash.com/photo-1518983546435-91f8b87fe561?w=600&q=70",
-  magic_explosion: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&q=70",
-  paintball: "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&q=70",
-  cake_smash: "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=600&q=70",
-  food_fight: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=70",
-  funny_makeup: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=600&q=70",
-  hollywood_fx: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&q=70",
-  // Vehicle
-  broken_windshield: "https://images.unsplash.com/photo-1485291571150-772bcfc10da5?w=600&q=70",
-  heavy_scratches: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=600&q=70",
-  mud: "https://images.unsplash.com/photo-1550355291-bbee04a92027?w=600&q=70",
-  rust: "https://images.unsplash.com/photo-1449426468159-d96dbf34635?w=600&q=70",
-  burned_paint: "https://images.unsplash.com/photo-1502877338535-766e1452684a?w=600&q=70",
-  police_chase: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=70",
-  apocalypse_car: "https://images.unsplash.com/photo-1519666336592-e225a99dcd2f?w=600&q=70",
-  monster_truck: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=600&q=70",
-  abandoned_car: "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=600&q=70",
-  flood_car: "https://images.unsplash.com/photo-1600661653561-629509216228?w=600&q=70",
-  comic_crash: "https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?w=600&q=70",
-  movie_explosion: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=600&q=70",
-  // House
-  destroyed_wall: "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=600&q=70",
-  broken_windows: "https://images.unsplash.com/photo-1519643381401-22c77e60520e?w=600&q=70",
-  house_flood: "https://images.unsplash.com/photo-1580223530509-070ec3d80984?w=600&q=70",
-  house_fire: "https://images.unsplash.com/photo-1523294587484-bae6cc870010?w=600&q=70",
-  haunted_house: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=600&q=70",
-  jungle_house: "https://images.unsplash.com/photo-1571055107559-3e67626fa8be?w=600&q=70",
-  snow_house: "https://images.unsplash.com/photo-1418985227700-036b8b4be3ef?w=600&q=70",
-  post_apocalypse: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&q=70",
-  hollywood_explosion: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=600&q=70",
-  abandoned_building: "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=600&q=70",
-  // Object
-  cinematic_phone: "https://images.unsplash.com/photo-1512499617640-c74ae3a79d37?w=600&q=70",
-  cinematic_laptop: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&q=70",
-  cinematic_tv: "https://images.unsplash.com/photo-1461151304267-38535e780c79?w=600&q=70",
-  cinematic_motorcycle: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=600&q=70",
-  cinematic_boat: "https://images.unsplash.com/photo-1493558103817-58b2924bce98?w=600&q=70",
-  cinematic_bicycle: "https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=600&q=70",
-  cinematic_furniture: "https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=600&q=70",
-  cinematic_electronics: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&q=70",
-};
-
-export function getEffectThumb(
-  effectId: string,
-  category?: string
-): string {
-  return EFFECT_THUMBS[effectId] || (category ? CATEGORY_HERO[category] : CATEGORY_HERO.face);
+/**
+ * Remote fallback for an effect with no bundled preview.
+ *
+ * Every effect currently ships a local WebP, so this only fires if the
+ * backend catalogue gains an id before the artwork lands. It is not
+ * exported: the old per-effect Unsplash table it used to read from showed
+ * stock photos of untouched subjects, which is the opposite of what a
+ * preview is for.
+ */
+function categoryFallback(category?: string): string {
+  return category ? CATEGORY_HERO[category] ?? CATEGORY_HERO.face : CATEGORY_HERO.face;
 }
 
 export function getEffectThumbSource(
@@ -140,7 +91,7 @@ export function getEffectThumbSource(
   }
 
   return {
-    uri: getEffectThumb(effectId, category),
+    uri: categoryFallback(category),
   };
 }
 

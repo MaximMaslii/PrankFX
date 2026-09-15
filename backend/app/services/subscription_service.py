@@ -17,41 +17,6 @@ class SubscriptionService:
             "premium_tier": user.get("premium_tier"),
         }
 
-    async def activate_mock(
-        self,
-        user_id: str,
-        tier: str,
-        interval: str,
-    ) -> dict:
-
-        # Legacy endpoint kept temporarily for compatibility.
-        # New PrankFX monetization uses FX credit packs.
-
-        if tier not in ("face_effects", "ultimate"):
-            raise ValueError("Invalid subscription tier")
-
-        if interval not in ("month", "year"):
-            raise ValueError("Invalid subscription interval")
-
-        user = await self.users.get_by_user_id(user_id)
-
-        if not user:
-            raise ValueError("User not found")
-
-        await self.users.update(
-            user_id,
-            {
-                "is_premium": True,
-                "premium_tier": tier,
-            },
-        )
-
-        return {
-            "ok": True,
-            "tier": tier,
-            "interval": interval,
-        }
-
     async def restore(self, user_id: str) -> dict:
         user = await self.users.get_by_user_id(user_id)
 

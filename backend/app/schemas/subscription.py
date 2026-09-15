@@ -1,13 +1,4 @@
-from typing import Literal
-
 from pydantic import BaseModel
-
-
-class MockActivateIn(BaseModel):
-
-    tier: Literal["face_effects", "ultimate"]
-
-    interval: Literal["month", "year"]
 
 
 class SubscriptionResponse(BaseModel):

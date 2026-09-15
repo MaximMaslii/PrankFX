@@ -462,12 +462,6 @@ export default function Home() {
               </View>
 
               <Text
-                style={styles.dailyEmoji}
-              >
-                {dailyEffect.emoji}
-              </Text>
-
-              <Text
                 style={styles.dailyName}
               >
                 {getEffectName(
@@ -545,12 +539,6 @@ export default function Home() {
             <View
               style={styles.popularBottom}
             >
-              <Text
-                style={styles.popularEmoji}
-              >
-                {item.emoji}
-              </Text>
-
               <Text
                 numberOfLines={1}
                 style={styles.popularName}
@@ -952,10 +940,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  dailyEmoji: {
-    fontSize: 30,
-  },
-
   dailyName: {
     color: "#fff",
     fontSize: FontSize.xl2,
@@ -1097,10 +1081,6 @@ const styles = StyleSheet.create({
     left: 10,
     right: 10,
     bottom: 10,
-  },
-
-  popularEmoji: {
-    fontSize: 20,
   },
 
   popularName: {
