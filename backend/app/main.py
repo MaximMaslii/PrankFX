@@ -153,6 +153,8 @@ async def health():
         # Optional: without ffprobe the audio track is detected through ffmpeg
         # itself, so a clip still keeps its voice.
         "ffprobe": ffprobe or "missing",
+        # Photo effects (Gemini image editing).
+        "gemini": "configured" if settings.GEMINI_API_KEY else "missing",
         "decart": "configured" if settings.DECART_API_KEY else "missing",
         # Photo Snaps (PixVerse v5.5 via fal.ai).
         "pixverse": "configured" if settings.FAL_KEY else "missing",
