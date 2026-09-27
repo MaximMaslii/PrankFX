@@ -15,12 +15,16 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const system = useColorScheme();
-  const [preference, setPreferenceState] = useState<"system" | "light" | "dark">("system");
+
+  // Dark is the designed-for mode: the effects are photographs, and they read
+  // better on ink than on paper. A light theme still exists and the setting
+  // still offers "system" — this is only what a fresh install starts with.
+  const [preference, setPreferenceState] = useState<"system" | "light" | "dark">("dark");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const stored = await storage.getItem<string>(KEY, "system");
+      const stored = await storage.getItem<string>(KEY, "dark");
       if (stored === "light" || stored === "dark" || stored === "system") {
         setPreferenceState(stored);
       }

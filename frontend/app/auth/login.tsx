@@ -1,16 +1,17 @@
 import React, { useState } from "react";
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -18,13 +19,17 @@ import { useTheme } from "@/src/theme/ThemeProvider";
 import { useI18n } from "@/src/i18n/I18nProvider";
 import { useAuth } from "@/src/auth/AuthProvider";
 import { useGoogleAuth } from "@/src/auth/useGoogleAuth";
+import { useAppleAuth } from "@/src/auth/useAppleAuth";
+import { AppleSignInButton } from "@/src/components/AppleSignInButton";
 import { GradientButton } from "@/src/components/GradientButton";
+import { Field } from "@/src/components/Field";
 import { Toast } from "@/src/components/Toast";
 import {
   FontSize,
   FontWeight,
   Radius,
   Spacing,
+  Tracking,
 } from "@/src/theme/tokens";
 
 export default function Login() {
@@ -34,16 +39,60 @@ export default function Login() {
   const insets = useSafeAreaInsets();
 
   const {
+    user,
     loginWithEmail,
     loginWithGoogle,
+    loginWithApple,
+    continueAsGuest,
     loading,
+    isGuest,
   } = useAuth();
+
+  // The escape hatch.
+  //
+  // The app normally creates a guest session by itself at launch, and this
+  // screen is only reached when that failed — almost always because the
+  // backend was unreachable. Landing someone on a sign-in form they also
+  // cannot submit is a dead end, so the retry lives here, and it reports the
+  // real reason instead of swallowing it.
+  const [guestBusy, setGuestBusy] = useState(false);
+
+  const continueGuest = async () => {
+    if (guestBusy) return;
+
+    setGuestBusy(true);
+
+    try {
+      await continueAsGuest();
+      router.replace("/home");
+    } catch (e: any) {
+      Toast.error(e?.message || t("error_generic"));
+    } finally {
+      setGuestBusy(false);
+    }
+  };
+
+  // A guest arrived here from Settings or the paywall — they already have a
+  // working session, so this screen must not be a dead end.
+  const skipLabel = {
+    en: "Keep using PrankFX without an account",
+    ru: "Продолжить без аккаунта",
+    de: "Ohne Konto weitermachen",
+  }[lang];
+
 
   const {
     signIn: googleSignIn,
     busy: googleBusy,
     ready: googleReady,
   } = useGoogleAuth();
+
+  // Apple's own button, only where Apple allows it to exist.
+  const {
+    signIn: appleSignIn,
+    available: appleAvailable,
+    busy: appleBusy,
+  } = useAppleAuth();
 
   const languages = [
     { id: "en" as const, label: "EN" },
@@ -92,7 +141,7 @@ export default function Login() {
 
     const outcome = await googleSignIn();
 
-    // The user backed out of the Google browser — say nothing, that is normal.
+    // The user backed out of the Google dialog — say nothing, that is normal.
     if (outcome.status === "cancelled") return;
 
     if (outcome.status === "error") {
@@ -111,343 +160,281 @@ export default function Login() {
   };
 
   // --------------------------------------------------
+  // APPLE LOGIN
+  // --------------------------------------------------
+
+  const appleLogin = async () => {
+    if (appleBusy || googleBusy || submitting) return;
+
+    const outcome = await appleSignIn();
+
+    if (outcome.status === "cancelled") return;
+
+    if (outcome.status === "error") {
+      Toast.error(
+        outcome.code === "not_configured" ? t("apple_not_ready") : outcome.message,
+      );
+      return;
+    }
+
+    try {
+      await loginWithApple(outcome.identityToken, outcome.fullName);
+      router.replace("/home");
+    } catch (e: any) {
+      Toast.error(e?.message || t("error_generic"));
+    }
+  };
+
+  // --------------------------------------------------
   // UI
   // --------------------------------------------------
 
   return (
-    <KeyboardAvoidingView
-      style={{
-        flex: 1,
-        backgroundColor: colors.surface,
-      }}
-      behavior={
-        Platform.OS === "ios"
-          ? "padding"
-          : undefined
-      }
-    >
-      <ScrollView
-        contentContainerStyle={[
-          styles.wrap,
-          {
-            paddingTop:
-              insets.top + 40,
+    <View style={{ flex: 1, backgroundColor: colors.surface }}>
+      <LinearGradient
+        colors={colors.bgGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
 
-            paddingBottom:
-              insets.bottom + 40,
-          },
+      {/* Two colour washes behind the form — the sign-in screen is the first
+          thing anyone sees, and a flat background here is a wasted first
+          impression. */}
+      <View
+        pointerEvents="none"
+        style={[
+          styles.wash,
+          { backgroundColor: colors.violet, top: -150, left: -120 },
         ]}
-        keyboardShouldPersistTaps="handled"
+      />
+      <View
+        pointerEvents="none"
+        style={[
+          styles.wash,
+          { backgroundColor: colors.accent, top: 60, right: -160 },
+        ]}
+      />
+
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-
-        {/* LANGUAGE SWITCHER */}
-
-        <View
-          style={[
-            styles.languageSwitcher,
+        <ScrollView
+          contentContainerStyle={[
+            styles.wrap,
             {
-              backgroundColor:
-                colors.surfaceSecondary,
-
-              borderColor:
-                colors.border,
+              paddingTop: insets.top + Spacing.lg,
+              paddingBottom: insets.bottom + Spacing.xl2,
             },
           ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          {languages.map((item) => (
-            <Pressable
-              key={item.id}
-              onPress={() =>
-                setLang(item.id)
-              }
-              style={[
-                styles.languageItem,
+          {/* LANGUAGE SWITCHER */}
 
-                lang === item.id && {
-                  backgroundColor:
-                    colors.brand,
-                },
-              ]}
-            >
-              <Text
+          <View
+            style={[
+              styles.languageSwitcher,
+              {
+                backgroundColor: colors.surfaceSecondary,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            {languages.map((item) => (
+              <Pressable
+                key={item.id}
+                onPress={() => setLang(item.id)}
                 style={[
-                  styles.languageText,
-
-                  {
-                    color:
-                      lang === item.id
-                        ? "#fff"
-                        : colors.onSurfaceTertiary,
+                  styles.languageItem,
+                  lang === item.id && {
+                    backgroundColor: colors.surfaceTertiary,
                   },
                 ]}
               >
-                {item.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        {/* LOGO */}
-
-        <View style={styles.logoWrap}>
-          <View
-            style={[
-              styles.logo,
-              {
-                backgroundColor:
-                  colors.brand,
-              },
-            ]}
-          >
-            <Ionicons
-              name="sparkles"
-              size={32}
-              color="#fff"
-            />
+                <Text
+                  style={[
+                    styles.languageText,
+                    {
+                      color:
+                        lang === item.id
+                          ? colors.brand
+                          : colors.onSurfaceTertiary,
+                    },
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </Pressable>
+            ))}
           </View>
 
-          <Text
-            style={[
-              styles.brand,
-              {
-                color:
-                  colors.onSurface,
-              },
-            ]}
-          >
-            PrankFX
-          </Text>
+          {/* LOGO */}
 
-          <Text
-            style={[
-              styles.tag,
-              {
-                color:
-                  colors.onSurfaceTertiary,
-              },
-            ]}
-          >
-            {t("cinematic_ai_effects")}
-          </Text>
-        </View>
+          <View style={styles.logoWrap}>
+            <Image
+              source={require("../../assets/images/prankfx-logo.png")}
+              style={styles.logo}
+              resizeMode="contain"
+              accessibilityLabel="PrankFX"
+            />
 
-        {/* TITLE */}
+            <Text style={[styles.brand, { color: colors.onSurface }]}>
+              PRANK<Text style={{ color: colors.brand }}>FX</Text>
+            </Text>
 
-        <Text
-          style={[
-            styles.title,
-            {
-              color:
-                colors.onSurface,
-            },
-          ]}
-        >
-          {t("welcome_back")}
-        </Text>
+            <Text style={[styles.tag, { color: colors.onSurfaceTertiary }]}>
+              {t("cinematic_ai_effects")}
+            </Text>
+          </View>
 
-        {/* EMAIL */}
-
-        <View
-          style={[
-            styles.input,
-            {
-              backgroundColor:
-                colors.surfaceSecondary,
-
-              borderColor:
-                colors.border,
-            },
-          ]}
-        >
-          <Ionicons
-            name="mail"
-            size={18}
-            color={
-              colors.onSurfaceTertiary
-            }
-          />
-
-          <TextInput
-            testID="login-email-input"
-            style={[
-              styles.textInput,
-              {
-                color:
-                  colors.onSurface,
-              },
-            ]}
-            placeholder={t("email")}
-            placeholderTextColor={
-              colors.onSurfaceTertiary
-            }
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-            value={email}
-            onChangeText={setEmail}
-          />
-        </View>
-
-        {/* PASSWORD */}
-
-        <View
-          style={[
-            styles.input,
-            {
-              backgroundColor:
-                colors.surfaceSecondary,
-
-              borderColor:
-                colors.border,
-            },
-          ]}
-        >
-          <Ionicons
-            name="lock-closed"
-            size={18}
-            color={
-              colors.onSurfaceTertiary
-            }
-          />
-
-          <TextInput
-            testID="login-password-input"
-            style={[
-              styles.textInput,
-              {
-                color:
-                  colors.onSurface,
-              },
-            ]}
-            placeholder={t("password")}
-            placeholderTextColor={
-              colors.onSurfaceTertiary
-            }
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-        </View>
-
-        {/* FORGOT PASSWORD */}
-
-        <Pressable
-          testID="login-forgot"
-          onPress={() =>
-            router.push("/auth/forgot")
-          }
-          style={styles.forgot}
-        >
-          <Text
-            style={[
-              styles.forgotText,
-              {
-                color:
-                  colors.brand,
-              },
-            ]}
-          >
-            {t("forgot_password")}
-          </Text>
-        </Pressable>
-
-        {/* EMAIL LOGIN BUTTON */}
-
-        <GradientButton
-          testID="login-submit-button"
-          label={t("log_in")}
-          onPress={submit}
-          loading={
-            submitting || loading
-          }
-        />
-
-        {/* DIVIDER */}
-
-        <View
-          style={
-            styles.dividerWrap
-          }
-        >
-          <View
-            style={[
-              styles.dividerLine,
-              {
-                backgroundColor:
-                  colors.border,
-              },
-            ]}
-          />
-
-          <Text
-            style={[
-              styles.dividerText,
-              {
-                color:
-                  colors.onSurfaceTertiary,
-              },
-            ]}
-          >
-            {t("or")}
-          </Text>
+          {/* CARD */}
 
           <View
             style={[
-              styles.dividerLine,
+              styles.card,
               {
-                backgroundColor:
-                  colors.border,
+                backgroundColor: colors.surfaceSecondary,
+                borderColor: colors.border,
               },
             ]}
-          />
-        </View>
+          >
+            <Text style={[styles.title, { color: colors.onSurface }]}>
+              {t("welcome_back")}
+            </Text>
 
-        {/* GOOGLE LOGIN BUTTON */}
+            <Field
+              testID="login-email-input"
+              label={t("email")}
+              icon="mail"
+              placeholder="you@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              value={email}
+              onChangeText={setEmail}
+            />
 
-        <GradientButton
-          testID="login-google-button"
-          variant="secondary"
-          label={t("continue_google")}
-          onPress={googleLogin}
-          loading={googleBusy || (loading && !submitting)}
-          disabled={submitting}
-          icon={
-            <Ionicons
-              name="logo-google"
-              size={18}
-              color={
-                colors.onSurface
+            <Field
+              testID="login-password-input"
+              label={t("password")}
+              icon="lock-closed"
+              placeholder="••••••••"
+              secure
+              value={password}
+              onChangeText={setPassword}
+            />
+
+            <Pressable
+              testID="login-forgot"
+              onPress={() => router.push("/auth/forgot")}
+              style={styles.forgot}
+              hitSlop={8}
+            >
+              <Text style={[styles.forgotText, { color: colors.brand }]}>
+                {t("forgot_password")}
+              </Text>
+            </Pressable>
+
+            <GradientButton
+              testID="login-submit-button"
+              label={t("log_in")}
+              onPress={submit}
+              loading={submitting || loading}
+            />
+
+            {/* DIVIDER */}
+
+            <View style={styles.dividerWrap}>
+              <View
+                style={[styles.dividerLine, { backgroundColor: colors.border }]}
+              />
+
+              <Text
+                style={[
+                  styles.dividerText,
+                  { color: colors.onSurfaceTertiary },
+                ]}
+              >
+                {t("or")}
+              </Text>
+
+              <View
+                style={[styles.dividerLine, { backgroundColor: colors.border }]}
+              />
+            </View>
+
+            <GradientButton
+              testID="login-google-button"
+              variant="secondary"
+              label={t("continue_google")}
+              onPress={googleLogin}
+              loading={googleBusy || (loading && !submitting)}
+              disabled={submitting}
+              icon={
+                <Ionicons
+                  name="logo-google"
+                  size={18}
+                  color={colors.onSurface}
+                />
               }
             />
-          }
-        />
 
-        {/* SIGN UP */}
+            {appleAvailable && (
+              <AppleSignInButton
+                kind="sign-in"
+                busy={appleBusy}
+                onPress={appleLogin}
+              />
+            )}
+          </View>
 
-        <Pressable
-          testID="login-goto-signup"
-          onPress={() =>
-            router.push(
-              "/auth/register"
-            )
-          }
-          style={styles.switch}
-        >
-          <Text
-            style={[
-              styles.switchText,
-              {
-                color:
-                  colors.onSurfaceTertiary,
-              },
-            ]}
+          {/* SIGN UP */}
+
+          <Pressable
+            testID="login-goto-signup"
+            onPress={() => router.push("/auth/register")}
+            style={styles.switch}
           >
-            {t("no_account")}
-          </Text>
-        </Pressable>
+            <Text
+              style={[styles.switchText, { color: colors.onSurfaceTertiary }]}
+            >
+              {t("no_account")}
+            </Text>
+          </Pressable>
 
-      </ScrollView>
-    </KeyboardAvoidingView>
+          {!user && (
+            <Pressable
+              testID="auth-continue-guest"
+              onPress={continueGuest}
+              disabled={guestBusy}
+              style={[styles.switch, { opacity: guestBusy ? 0.5 : 1 }]}
+            >
+              <Text
+                style={[styles.switchText, { color: colors.brand }]}
+              >
+                {t("continue_as_guest")}
+              </Text>
+            </Pressable>
+          )}
+
+          {isGuest && (
+            <Pressable
+              testID="auth-skip"
+              onPress={() => router.replace("/home")}
+              style={styles.switch}
+            >
+              <Text
+                style={[styles.switchText, { color: colors.onSurfaceTertiary }]}
+              >
+                {skipLabel}
+              </Text>
+            </Pressable>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -456,129 +443,101 @@ export default function Login() {
 // --------------------------------------------------
 
 const styles = StyleSheet.create({
+  wash: {
+    position: "absolute",
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    opacity: 0.15,
+  },
+
+  wrap: {
+    paddingHorizontal: Spacing.xl,
+  },
+
   languageSwitcher: {
     alignSelf: "flex-end",
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderRadius: Radius.lg,
+    borderRadius: Radius.pill,
     padding: 3,
   },
 
   languageItem: {
-    minWidth: 38,
-    height: 32,
-    borderRadius: Radius.md,
+    minWidth: 40,
+    height: 30,
+    borderRadius: Radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal:
-      Spacing.sm,
+    paddingHorizontal: Spacing.sm,
   },
 
   languageText: {
     fontSize: FontSize.sm,
-    fontWeight:
-      FontWeight.semibold,
-  },
-
-  wrap: {
-    paddingHorizontal:
-      Spacing.xl,
-    gap: Spacing.md,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.4,
   },
 
   logoWrap: {
     alignItems: "center",
-    marginBottom:
-      Spacing.xl2,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.xl2,
   },
 
   logo: {
-    width: 76,
-    height: 76,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: Spacing.md,
-
-    shadowColor: "#FF3B30",
-    shadowOpacity: 0.4,
-    shadowRadius: 14,
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-
-    elevation: 6,
+    width: 116,
+    height: 116,
   },
 
   brand: {
-    fontSize:
-      FontSize.xl3,
-    fontWeight:
-      FontWeight.heavy,
-    letterSpacing: -0.5,
+    fontSize: FontSize.xl3,
+    fontWeight: FontWeight.heavy,
+    letterSpacing: Tracking.display,
+    marginTop: Spacing.sm,
   },
 
   tag: {
-    fontSize:
-      FontSize.base,
+    fontSize: FontSize.base,
     marginTop: 4,
   },
 
-  title: {
-    fontSize:
-      FontSize.xl2,
-    fontWeight:
-      FontWeight.bold,
-    marginBottom:
-      Spacing.md,
-  },
-
-  input: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-
-    borderRadius:
-      Radius.md,
-
+  card: {
+    borderRadius: Radius.xl,
     borderWidth: 1,
-
-    paddingHorizontal:
-      Spacing.lg,
-
-    height: 54,
+    padding: Spacing.xl,
   },
 
-  textInput: {
-    flex: 1,
-    fontSize:
-      FontSize.md,
-    paddingVertical: 0,
+  title: {
+    fontSize: FontSize.xl2,
+    fontWeight: FontWeight.heavy,
+    letterSpacing: Tracking.title,
+    marginBottom: Spacing.lg,
   },
 
   forgot: {
     alignSelf: "flex-end",
-    padding:
-      Spacing.xs,
-    marginBottom:
-      Spacing.md,
+    paddingVertical: Spacing.xs,
+    marginTop: -Spacing.sm,
+    marginBottom: Spacing.lg,
   },
 
   forgotText: {
-    fontSize:
-      FontSize.base,
-    fontWeight:
-      FontWeight.semibold,
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.semibold,
+  },
+
+  appleButton: {
+    width: "100%",
+    height: 56,
+    marginTop: Spacing.md,
   },
 
   dividerWrap: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.md,
-    marginVertical:
-      Spacing.md,
+    marginVertical: Spacing.lg,
   },
 
   dividerLine: {
@@ -587,22 +546,20 @@ const styles = StyleSheet.create({
   },
 
   dividerText: {
-    fontSize:
-      FontSize.sm,
-    fontWeight:
-      FontWeight.medium,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semibold,
+    textTransform: "uppercase",
+    letterSpacing: Tracking.kicker,
   },
 
   switch: {
     alignItems: "center",
-    padding:
-      Spacing.md,
-    marginTop:
-      Spacing.sm,
+    padding: Spacing.lg,
+    marginTop: Spacing.sm,
   },
 
   switchText: {
-    fontSize:
-      FontSize.base,
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.medium,
   },
 });

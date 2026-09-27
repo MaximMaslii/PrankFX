@@ -43,20 +43,20 @@ export default function PickSource() {
       </Text>
 
       <View style={styles.actions}>
-        <Card testID="source-camera" label={t("take_photo")} icon="camera" gradient={colors.brandGradient} onPress={() => start("camera")} />
-        <Card testID="source-gallery" label={t("upload_photo")} icon="images" gradient={["#2C2C2E", "#1C1C1E"]} onPress={() => start("gallery")} />
+        <Card testID="source-camera" label={t("take_photo")} icon="camera" gradient={colors.brandGradient} fg={colors.onBrand} onPress={() => start("camera")} />
+        <Card testID="source-gallery" label={t("upload_photo")} icon="images" gradient={[colors.surfaceSecondary, colors.surfaceTertiary]} fg={colors.onSurface} onPress={() => start("gallery")} />
       </View>
     </View>
   );
 }
 
-function Card({ label, icon, gradient, onPress, testID }:
-  { label: string; icon: any; gradient: [string, string]; onPress: () => void; testID?: string }) {
+function Card({ label, icon, gradient, fg, onPress, testID }:
+  { label: string; icon: any; gradient: [string, string]; fg: string; onPress: () => void; testID?: string }) {
   return (
     <Pressable testID={testID} onPress={onPress} style={{ flex: 1 }}>
       <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.card}>
-        <Ionicons name={icon} size={38} color="#fff" />
-        <Text style={styles.cardText}>{label}</Text>
+        <Ionicons name={icon} size={38} color={fg} />
+        <Text style={[styles.cardText, { color: fg }]}>{label}</Text>
       </LinearGradient>
     </Pressable>
   );

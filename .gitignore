@@ -9,6 +9,9 @@ expo-env.d.ts
 .env.local
 .env*.local
 
+# Finished Snap clips — regenerated, never committed
+backend/media/
+
 __pycache__/
 *.py[cod]
 .venv/

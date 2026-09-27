@@ -36,6 +36,25 @@ async def ensure_indexes() -> None:
     await db.projects.create_index("project_id", unique=True)
     await db.projects.create_index([("user_id", 1), ("created_at", -1)])
 
+    await db.snap_jobs.create_index("job_id", unique=True)
+    await db.snap_jobs.create_index([("user_id", 1), ("created_at", -1)])
+
+    # Sign in with Apple: the account is keyed on Apple's `sub`, because the
+    # email only ever arrives on the first sign-in. Sparse, since the field
+    # exists on Apple accounts only.
+    await db.users.create_index("apple_sub", unique=True, sparse=True)
+
+    # Guest accounts are keyed on the installation. Unique so that two
+    # launches racing on one device cannot produce two accounts — each of
+    # which would come with its own free FX. Sparse because the field is
+    # removed the moment a guest becomes a real account.
+    await db.users.create_index("device_id", unique=True, sparse=True)
+
+    # The one index that keeps purchases honest: RevenueCat retries a webhook
+    # until it gets a 2xx, and without this a retry would credit FX twice.
+    await db.purchases.create_index("event_id", unique=True)
+    await db.purchases.create_index([("app_user_id", 1), ("received_at", -1)])
+
     logger.info("MongoDB indexes are in place")
 
 

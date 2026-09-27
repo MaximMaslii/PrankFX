@@ -8,25 +8,38 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/src/theme/ThemeProvider";
 import { useI18n } from "@/src/i18n/I18nProvider";
-import { FontSize, FontWeight } from "@/src/theme/tokens";
+import {
+  FontSize,
+  FontWeight,
+  Radius,
+  Spacing,
+  shadow,
+} from "@/src/theme/tokens";
 
+const ICONS: Record<string, [any, any]> = {
+  home: ["home", "home-outline"],
+  effects: ["sparkles", "sparkles-outline"],
+  history: ["images", "images-outline"],
+  premium: ["diamond", "diamond-outline"],
+  settings: ["settings", "settings-outline"],
+};
+
+/**
+ * A floating bar rather than a full-width strip.
+ *
+ * The strip version sat flush against the bottom edge and visually merged
+ * with the photo grids above it; detaching it by 12px and rounding it makes
+ * the content look like it scrolls *under* something, which is what gives the
+ * screen depth. The active tab is marked by a tinted chip, not by a second
+ * lime element — on any screen there is exactly one lime call to action.
+ */
 export default function TabsLayout() {
   const { colors, mode } = useTheme();
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
-  const tabHeight = 60 + insets.bottom;
 
-  const iconFor = (name: string, focused: boolean, color: string) => {
-    const map: Record<string, [any, any]> = {
-      home: ["home", "home-outline"],
-      effects: ["sparkles", "sparkles-outline"],
-      history: ["images", "images-outline"],
-      premium: ["star", "star-outline"],
-      settings: ["settings", "settings-outline"],
-    };
-    const [filled, outline] = map[name] || ["ellipse", "ellipse-outline"];
-    return <Ionicons name={focused ? filled : outline} size={22} color={color} />;
-  };
+  const BAR_HEIGHT = 64;
+  const BOTTOM = Math.max(insets.bottom, 10);
 
   return (
     <Tabs
@@ -34,27 +47,85 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.brand,
         tabBarInactiveTintColor: colors.onSurfaceTertiary,
-        tabBarLabelStyle: { fontSize: FontSize.xs, fontWeight: FontWeight.semibold, marginTop: -2 },
-        tabBarIconStyle: { marginTop: 4 },
+
+        tabBarLabelStyle: {
+          fontSize: FontSize.xs,
+          fontWeight: FontWeight.semibold,
+          marginTop: 2,
+          marginBottom: 6,
+        },
+
+        tabBarItemStyle: {
+          paddingTop: 8,
+        },
+
         tabBarStyle: {
           position: "absolute",
-          height: tabHeight,
-          paddingBottom: insets.bottom,
-          paddingTop: 6,
-          borderTopWidth: StyleSheet.hairlineWidth,
-          borderTopColor: colors.border,
-          backgroundColor: Platform.OS === "android" ? colors.glassStrong : "transparent",
+          left: Spacing.lg,
+          right: Spacing.lg,
+          bottom: BOTTOM,
+          height: BAR_HEIGHT,
+          paddingBottom: 0,
+          paddingTop: 0,
+          borderRadius: Radius.xl,
+          borderTopWidth: 0,
+          backgroundColor: "transparent",
+          ...shadow("md"),
         },
-        tabBarBackground: () =>
-          Platform.OS === "ios" ? (
-            <BlurView tint={mode === "dark" ? "dark" : "light"} intensity={80} style={StyleSheet.absoluteFill} />
-          ) : (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.glassStrong }]} />
-          ),
-        tabBarIcon: ({ focused, color }) => iconFor(route.name, focused, color),
+
+        tabBarBackground: () => (
+          <View style={styles.bg}>
+            {Platform.OS === "ios" ? (
+              <BlurView
+                tint={mode === "dark" ? "dark" : "light"}
+                intensity={40}
+                style={StyleSheet.absoluteFill}
+              />
+            ) : null}
+
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                {
+                  backgroundColor:
+                    Platform.OS === "ios" ? colors.glass : colors.glassStrong,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: Radius.xl,
+                },
+              ]}
+            />
+          </View>
+        ),
+
+        tabBarIcon: ({ focused, color }) => {
+          const [filled, outline] = ICONS[route.name] || [
+            "ellipse",
+            "ellipse-outline",
+          ];
+
+          return (
+            <View
+              style={[
+                styles.chip,
+                focused && {
+                  backgroundColor: colors.brandTertiary,
+                },
+              ]}
+            >
+              <Ionicons
+                name={focused ? filled : outline}
+                size={20}
+                color={color}
+              />
+            </View>
+          );
+        },
       })}
       screenListeners={{
-        tabPress: () => { Haptics.selectionAsync().catch(() => {}); },
+        tabPress: () => {
+          Haptics.selectionAsync().catch(() => {});
+        },
       }}
     >
       <Tabs.Screen name="home" options={{ title: t("tab_home") }} />
@@ -65,3 +136,18 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  bg: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: Radius.xl,
+    overflow: "hidden",
+  },
+  chip: {
+    width: 40,
+    height: 28,
+    borderRadius: Radius.sm,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});

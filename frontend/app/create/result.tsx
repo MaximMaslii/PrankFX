@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -9,11 +9,20 @@ import * as Haptics from "expo-haptics";
 import { useTheme } from "@/src/theme/ThemeProvider";
 import { useI18n } from "@/src/i18n/I18nProvider";
 import { getEffectName } from "@/src/i18n/effectNames";
-import { GenAPI, ProjectFull, ProjectsAPI } from "@/src/api/client";
+import { GenAPI, ProjectFull, ProjectsAPI, SubAPI } from "@/src/api/client";
+import { useAuth } from "@/src/auth/AuthProvider";
+import { PAYWALL_DELAY_MS, shouldOfferPaywall } from "@/src/utils/paywall";
 import { BeforeAfterSlider } from "@/src/components/BeforeAfterSlider";
 import { CreateFlow } from "@/src/utils/createFlow";
 import { toDataUri } from "@/src/utils/images";
 import { saveBase64ToGallery } from "@/src/utils/saveImage";
+import {
+  APP_LABEL,
+  base64ToCacheFile,
+  shareResult,
+  SocialApp,
+} from "@/src/utils/share";
+import { SNAP_HASHTAG } from "@/src/utils/snapVideo";
 import { Toast } from "@/src/components/Toast";
 import { FontSize, FontWeight, Radius, Spacing } from "@/src/theme/tokens";
 
@@ -23,6 +32,7 @@ export default function Result() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ pid?: string }>();
+  const { user } = useAuth();
 
   const [project, setProject] = useState<ProjectFull | null>(null);
   const [loading, setLoading] = useState(false);
@@ -52,6 +62,46 @@ export default function Result() {
 
   useEffect(() => { load(); }, [load]);
 
+  // ---------------------------------------------------------------
+  // The offer, after the result — never before it.
+  //
+  // Someone who has just watched the thing work is in a completely different
+  // frame of mind from someone looking at a price list on launch. So the
+  // paywall waits for the result to land, checks that the balance really is
+  // empty, and respects the cooldown in paywall.ts so it cannot become a
+  // toll booth on every creation.
+  // ---------------------------------------------------------------
+  useEffect(() => {
+    if (!project || user?.is_premium) return;
+
+    let cancelled = false;
+
+    const timer = setTimeout(async () => {
+      try {
+        const [balance, allowed] = await Promise.all([
+          SubAPI.fxBalance(),
+          shouldOfferPaywall(),
+        ]);
+
+        // Still has FX: nothing to sell them yet, and interrupting would
+        // only get in the way of the next one.
+        if (cancelled || !allowed || balance.fx_credits > 0) return;
+
+        router.push({
+          pathname: "/paywall",
+          params: { reason: "first_result" },
+        });
+      } catch {
+        // Offline. A finished result is not the moment to show an error.
+      }
+    }, PAYWALL_DELAY_MS);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [project?.project_id, user?.is_premium, router]);
+
   const toggleFav = async () => {
     if (!project) return;
     Haptics.selectionAsync().catch(() => {});
@@ -61,74 +111,79 @@ export default function Result() {
     } catch { /* noop */ }
   };
 
-  const doShare = async () => {
-  if (!project) return;
+  /**
+   * Share the picture.
+   *
+   * `app` undefined opens the system sheet; naming an app saves the image to
+   * the camera roll first and then opens that app, because neither TikTok nor
+   * Instagram accepts a file handed to it from outside without a native SDK.
+   * The old code passed a `data:` URI to RN's Share, which Android drops —
+   * the caption went out without the picture.
+   */
+  const shareTo = async (app?: SocialApp) => {
+    if (!project) return;
 
-  const message = `Check out my cinematic ${project.effect_name} FX made with PrankFX!`;
-  const imageUri = toDataUri(project.result_image);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
 
-  try {
-    // =========================
-    // WEB
-    // =========================
-    if (Platform.OS === "web") {
-      const nav = globalThis.navigator as Navigator & {
-        share?: (data: {
-          title?: string;
-          text?: string;
-          url?: string;
-        }) => Promise<void>;
-      };
+    const effectLabel = getEffectName(
+      project.effect_id,
+      lang,
+      project.effect_name || "",
+    );
 
-      if (typeof nav?.share === "function") {
-        await nav.share({
-          title: `PrankFX — ${project.effect_name}`,
-          text: message,
-        });
+    const caption = `${t("share_photo_caption").replace("{effect}", effectLabel)} ${SNAP_HASHTAG}`
+      .replace(/\s+/g, " ")
+      .trim();
 
+    const filename = `prankfx_${project.effect_id}_${Date.now()}.jpg`;
+
+    try {
+      // =========================
+      // WEB — download, there is no share sheet to speak of.
+      // =========================
+      if (Platform.OS === "web") {
+        const link = document?.createElement?.("a");
+
+        if (link) {
+          link.href = toDataUri(project.result_image);
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          Toast.success(t("saved"));
+          return;
+        }
+
+        Toast.error("Sharing is not supported in this browser.");
         return;
       }
 
-      // Fallback for desktop browsers.
+      const uri = await base64ToCacheFile(project.result_image, filename);
+
+      await shareResult({
+        uri,
+        mimeType: "image/jpeg",
+        uti: "public.jpeg",
+        dialogTitle: t("share"),
+        caption,
+        captionCopiedNotice: t("share_caption_copied"),
+        app,
+        save: () => saveBase64ToGallery(project.result_image, filename),
+        savedNotice: app
+          ? t("share_saved_pick").replace("{app}", APP_LABEL[app])
+          : undefined,
+      });
+    } catch (error: any) {
       if (
-        typeof document !== "undefined" &&
-        typeof document.createElement === "function"
+        error?.name === "AbortError" ||
+        error?.message?.toLowerCase?.().includes("cancel")
       ) {
-        const link = document.createElement("a");
-
-        link.href = imageUri;
-        link.download = `prankfx_${project.effect_id}.jpg`;
-
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        Toast.success("Image downloaded");
         return;
       }
 
-      Toast.error("Sharing is not supported in this browser.");
-      return;
+      Toast.error(error?.message || t("error_generic"));
     }
-
-    // =========================
-    // ANDROID / IOS
-    // =========================
-    await Share.share({
-      message,
-      url: imageUri,
-    });
-  } catch (error: any) {
-    if (
-      error?.name === "AbortError" ||
-      error?.message?.toLowerCase?.().includes("cancel")
-    ) {
-      return;
-    }
-
-    Toast.error(error?.message || t("error_generic"));
-  }
-};
+  };
 
 
   const save = async () => {
@@ -214,13 +269,28 @@ export default function Result() {
           {t("compare_slider_hint")}
         </Text>
 
-        {/* Share row */}
+        {/* Share row.
+            Three buttons that do three different things, instead of five
+            that all opened the same sheet. */}
         <View style={styles.shareRow}>
-          <ShareBtn testID="share-instagram" label="Instagram" icon="logo-instagram" onPress={doShare} />
-          <ShareBtn testID="share-tiktok" label="TikTok" icon="musical-notes" onPress={doShare} />
-          <ShareBtn testID="share-facebook" label="Facebook" icon="logo-facebook" onPress={doShare} />
-          <ShareBtn testID="share-whatsapp" label="WhatsApp" icon="logo-whatsapp" onPress={doShare} />
-          <ShareBtn testID="share-telegram" label="Telegram" icon="paper-plane" onPress={doShare} />
+          <ShareBtn
+            testID="share-tiktok"
+            label="TikTok"
+            icon="musical-notes"
+            onPress={() => shareTo("tiktok")}
+          />
+          <ShareBtn
+            testID="share-instagram"
+            label="Instagram"
+            icon="logo-instagram"
+            onPress={() => shareTo("instagram")}
+          />
+          <ShareBtn
+            testID="share-more"
+            label={t("share")}
+            icon="share-social"
+            onPress={() => shareTo()}
+          />
         </View>
       </ScrollView>
 
@@ -258,9 +328,9 @@ export default function Result() {
       </View>
     </Pressable>
 
-    <Pressable 
-      testID="share-btn" 
-      onPress={doShare} 
+    <Pressable
+      testID="share-btn"
+      onPress={() => shareTo()}
       disabled={loading}
       style={{ flex: 1, opacity: loading ? 0.5 : 1 }}
     >
@@ -268,10 +338,10 @@ export default function Result() {
         colors={colors.brandGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.saveBtn}
+        style={[styles.saveBtn, { borderColor: "transparent" }]}
       >
-        <Ionicons name="share-outline" size={20} color="#fff" />
-        <Text style={[styles.saveText, { color: "#fff" }]}>
+        <Ionicons name="share-outline" size={20} color={colors.onBrand} />
+        <Text style={[styles.saveText, { color: colors.onBrand }]}>
           {t("share")}
         </Text>
       </LinearGradient>
@@ -359,7 +429,7 @@ export default function Result() {
         color={colors.brand}
       />
       <Text style={[styles.saveText, { color: colors.brand }]}>
-        Try Another Effect
+        {t("try_another_effect")}
       </Text>
     </View>
   </Pressable>

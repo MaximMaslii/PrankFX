@@ -1,16 +1,34 @@
-import React from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View, ViewStyle } from "react-native";
+import React, { useRef } from "react";
+import {
+  ActivityIndicator,
+  Animated,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  ViewStyle,
+} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
-import { useTheme } from "@/src/theme/ThemeProvider";
-import { FontSize, FontWeight, Radius, Spacing } from "@/src/theme/tokens";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger";
+import { useTheme } from "@/src/theme/ThemeProvider";
+import {
+  FontSize,
+  FontWeight,
+  Motion,
+  Radius,
+  Spacing,
+  glow,
+} from "@/src/theme/tokens";
+
+type Variant = "primary" | "accent" | "secondary" | "ghost" | "danger";
+type Size = "md" | "lg";
 
 type Props = {
   label: string;
   onPress?: () => void;
   variant?: Variant;
+  size?: Size;
   loading?: boolean;
   disabled?: boolean;
   fullWidth?: boolean;
@@ -19,86 +37,179 @@ type Props = {
   testID?: string;
 };
 
-export function GradientButton({ label, onPress, variant = "primary", loading, disabled, fullWidth = true, icon, style, testID }: Props) {
+/**
+ * The one button in the app.
+ *
+ * `primary` is lime and glows — there is at most one on a screen, and it is
+ * always the thing the screen exists for. `accent` (magenta) is for actions
+ * that cost FX or money. Everything else is quiet: an outline or bare text.
+ *
+ * Every press sinks the button 3% and fires a haptic, so the control answers
+ * before the network does.
+ */
+export function GradientButton({
+  label,
+  onPress,
+  variant = "primary",
+  size = "lg",
+  loading,
+  disabled,
+  fullWidth = true,
+  icon,
+  style,
+  testID,
+}: Props) {
   const { colors } = useTheme();
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const inactive = disabled || loading;
+
+  const press = (to: number) =>
+    Animated.spring(scale, {
+      toValue: to,
+      useNativeDriver: true,
+      speed: 40,
+      bounciness: 0,
+    }).start();
 
   const handlePress = () => {
-    if (disabled || loading) return;
+    if (inactive) return;
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     onPress?.();
   };
 
-  const disabledStyle = disabled ? { opacity: 0.5 } : null;
-  const wrapper: ViewStyle = { width: fullWidth ? "100%" : undefined, borderRadius: Radius.pill, overflow: "hidden", ...disabledStyle, ...style };
+  const height = size === "lg" ? 56 : 46;
+  const radius = Radius.md;
 
-  if (variant === "primary") {
-    return (
-      <Pressable testID={testID} onPress={handlePress} disabled={disabled || loading} style={wrapper}>
+  const wrapper: ViewStyle = {
+    width: fullWidth ? "100%" : undefined,
+    borderRadius: radius,
+    opacity: disabled ? 0.45 : 1,
+    ...style,
+  };
+
+  const inner: ViewStyle = {
+    height,
+    borderRadius: radius,
+    paddingHorizontal: Spacing.xl,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  };
+
+  const content = (labelColor: string) =>
+    loading ? (
+      <ActivityIndicator color={labelColor} />
+    ) : (
+      <View style={styles.row}>
+        {icon}
+        <Text
+          numberOfLines={1}
+          style={[
+            styles.label,
+            {
+              color: labelColor,
+              marginLeft: icon ? 8 : 0,
+              fontSize: size === "lg" ? FontSize.lg : FontSize.base,
+            },
+          ]}
+        >
+          {label}
+        </Text>
+      </View>
+    );
+
+  const body = () => {
+    if (variant === "primary") {
+      return (
         <LinearGradient
           colors={colors.brandGradient}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={styles.inner}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={inner}
         >
-          {loading ? <ActivityIndicator color={colors.onBrand} /> : (
-            <View style={styles.row}>
-              {icon}
-              <Text style={[styles.label, { color: colors.onBrand, marginLeft: icon ? 8 : 0 }]}>{label}</Text>
-            </View>
-          )}
+          {content(colors.onBrand)}
         </LinearGradient>
-      </Pressable>
-    );
-  }
-  if (variant === "danger") {
-    return (
-      <Pressable testID={testID} onPress={handlePress} disabled={disabled || loading} style={[wrapper, { backgroundColor: colors.error }]}>
-        <View style={styles.inner}>
-          {loading ? <ActivityIndicator color={"#fff"} /> : (
-            <View style={styles.row}>
-              {icon}
-              <Text style={[styles.label, { color: "#fff", marginLeft: icon ? 8 : 0 }]}>{label}</Text>
-            </View>
-          )}
+      );
+    }
+
+    if (variant === "accent") {
+      return (
+        <View style={[inner, { backgroundColor: colors.accent }]}>
+          {content(colors.onAccent)}
         </View>
-      </Pressable>
-    );
-  }
-  if (variant === "ghost") {
-    return (
-      <Pressable testID={testID} onPress={handlePress} disabled={disabled || loading} style={[wrapper, { backgroundColor: "transparent" }]}>
-        <View style={styles.inner}>
-          <View style={styles.row}>
-            {icon}
-            <Text style={[styles.label, { color: colors.onSurface, marginLeft: icon ? 8 : 0 }]}>{label}</Text>
-          </View>
+      );
+    }
+
+    if (variant === "danger") {
+      return (
+        <View style={[inner, { backgroundColor: colors.error }]}>
+          {content("#FFFFFF")}
         </View>
-      </Pressable>
-    );
-  }
-  // secondary
-  return (
-    <Pressable testID={testID} onPress={handlePress} disabled={disabled || loading}
-      style={[wrapper, { backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border }]}>
-      <View style={styles.inner}>
-        {loading ? <ActivityIndicator color={colors.onSurface} /> : (
-          <View style={styles.row}>
-            {icon}
-            <Text style={[styles.label, { color: colors.onSurface, marginLeft: icon ? 8 : 0 }]}>{label}</Text>
-          </View>
-        )}
+      );
+    }
+
+    if (variant === "ghost") {
+      return (
+        <View style={[inner, { backgroundColor: "transparent" }]}>
+          {content(colors.onSurfaceTertiary)}
+        </View>
+      );
+    }
+
+    // secondary — an outline that borrows the accent only on its border
+    return (
+      <View
+        style={[
+          inner,
+          {
+            backgroundColor: colors.surfaceSecondary,
+            borderWidth: 1,
+            borderColor: colors.borderStrong,
+          },
+        ]}
+      >
+        {content(colors.onSurface)}
       </View>
-    </Pressable>
+    );
+  };
+
+  const glowStyle =
+    inactive || variant === "ghost" || variant === "secondary"
+      ? null
+      : variant === "primary"
+        ? glow(colors.glowBrand, "md")
+        : variant === "accent"
+          ? glow(colors.glowAccent, "md")
+          : null;
+
+  return (
+    <Animated.View style={[wrapper, glowStyle, { transform: [{ scale }] }]}>
+      <Pressable
+        testID={testID}
+        onPress={handlePress}
+        onPressIn={() => !inactive && press(Motion.pressScale)}
+        onPressOut={() => press(1)}
+        disabled={inactive}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: !!inactive, busy: !!loading }}
+        style={{ borderRadius: radius }}
+      >
+        {body()}
+      </Pressable>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  inner: {
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.xl,
+  row: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 54,
   },
-  row: { flexDirection: "row", alignItems: "center", justifyContent: "center" },
-  label: { fontSize: FontSize.lg, fontWeight: FontWeight.semibold, letterSpacing: 0.2 },
+  label: {
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.2,
+  },
 });

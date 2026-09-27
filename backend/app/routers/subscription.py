@@ -90,6 +90,18 @@ async def credits(
 
 
 @router.get(
+    "/plans",
+)
+async def plans():
+    """Subscription catalogue for the paywall.
+
+    Public on purpose: the paywall has to be able to render before anyone has
+    signed in, and there is nothing private about a price list.
+    """
+    return await fx_service.get_plans()
+
+
+@router.get(
     "/fx/packs",
 )
 async def fx_packs():

@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import Constants from "expo-constants";
+import { currentUpdateLabel } from "@/src/utils/otaUpdates";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -8,14 +10,15 @@ import * as WebBrowser from "expo-web-browser";
 import { useTheme } from "@/src/theme/ThemeProvider";
 import { useI18n } from "@/src/i18n/I18nProvider";
 import { useAuth } from "@/src/auth/AuthProvider";
-import { SubAPI } from "@/src/api/client";
+import { PurchasesAPI, SITE_BASE } from "@/src/api/client";
+import { restoreStorePurchases } from "@/src/utils/purchases";
 import { Toast } from "@/src/components/Toast";
 import { FontSize, FontWeight, Radius, Spacing } from "@/src/theme/tokens";
 
 export default function Settings() {
   const { colors, preference, setPreference } = useTheme();
   const { t, lang, setLang } = useI18n();
-  const { user, logout, deleteAccount } = useAuth();
+  const { user, isGuest, logout, deleteAccount, refresh } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [notif, setNotif] = useState(true);
@@ -23,10 +26,48 @@ export default function Settings() {
 
   const openLink = (url: string) => WebBrowser.openBrowserAsync(url).catch(() => {});
 
+  /**
+   * The legal pages are served by the backend itself (/privacy, /terms,
+   * /support), so they always match the deployment the app is talking to and
+   * there is no second URL to keep in sync. `lang` follows the app language.
+   */
+  const SUPPORT_EMAIL = "maxim.maslii777@gmail.com";
+
+  const openLegal = (path: string) => {
+    if (!SITE_BASE) {
+      // No backend configured — still give the user somewhere to go.
+      openLink(`mailto:${SUPPORT_EMAIL}`);
+      return;
+    }
+
+    openLink(`${SITE_BASE}${path}?lang=${lang}`);
+  };
+
   const doLogout = async () => {
     await logout();
     router.replace("/auth/login");
   };
+
+  const guestCopy = {
+    en: {
+      name: "Guest",
+      sub: "Not signed in on any device",
+      cta: "Create an account",
+      why: "Keeps your FX, your history and anything you buy — and gets them back if you change phone.",
+    },
+    ru: {
+      name: "Гость",
+      sub: "Вход не выполнен",
+      cta: "Создать аккаунт",
+      why: "Сохранит ваши FX, историю и покупки — и вернёт их при смене телефона.",
+    },
+    de: {
+      name: "Gast",
+      sub: "Nicht angemeldet",
+      cta: "Konto erstellen",
+      why: "Sichert deine FX, deine Historie und deine Käufe — auch beim Handywechsel.",
+    },
+  }[lang];
 
   const doDelete = async () => {
     if (!confirmDelete) {
@@ -38,11 +79,30 @@ export default function Settings() {
     router.replace("/auth/login");
   };
 
+  /**
+   * Restore purchases — two steps, because two systems have to agree.
+   *
+   * The store SDK re-reads the receipt on the device; then the server asks
+   * RevenueCat what this account is entitled to and writes it down. Doing
+   * only the first left the backend none the wiser, which is why this button
+   * used to answer "no active subscription" to people who had paid.
+   */
   const restore = async () => {
     try {
-      const r = await SubAPI.restore();
-      Toast.success(r.is_premium ? "Restored" : "No active subscription");
-    } catch { /* noop */ }
+      await restoreStorePurchases();
+
+      const result = await PurchasesAPI.restore();
+
+      await refresh();
+
+      Toast.success(
+        result.is_premium
+          ? t("purchases_restored")
+          : t("no_active_subscription"),
+      );
+    } catch (e: any) {
+      Toast.error(e?.message || t("error_generic"));
+    }
   };
 
   return (
@@ -54,20 +114,55 @@ export default function Settings() {
 
       {/* Profile card */}
       <View style={[styles.profile, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
-        <View style={[styles.avatar, { backgroundColor: colors.brand }]}>
-          <Text style={styles.avatarText}>{(user?.name || user?.email || "P")[0].toUpperCase()}</Text>
+        {/* The brand colour is lime now, and white on lime is unreadable —
+            the avatar takes a neutral chip and the text colour of the page. */}
+        <View style={[styles.avatar, { backgroundColor: colors.surfaceTertiary, borderColor: colors.brand }]}>
+          <Text style={[styles.avatarText, { color: colors.onSurface }]}>{(user?.name || user?.email || "P")[0].toUpperCase()}</Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.name, { color: colors.onSurface }]}>{user?.name || "PrankFX user"}</Text>
-          <Text style={[styles.email, { color: colors.onSurfaceTertiary }]}>{user?.email}</Text>
+          <Text style={[styles.name, { color: colors.onSurface }]}>
+            {isGuest ? guestCopy.name : user?.name || "PrankFX user"}
+          </Text>
+          <Text style={[styles.email, { color: colors.onSurfaceTertiary }]}>
+            {isGuest ? guestCopy.sub : user?.email}
+          </Text>
         </View>
         {user?.is_premium && (
-          <View style={[styles.badge, { backgroundColor: colors.brand }]}>
+          <View style={[styles.badge, { backgroundColor: colors.accent }]}>
             <Ionicons name="diamond" size={12} color="#fff" />
             <Text style={styles.badgeText}>PRO</Text>
           </View>
         )}
       </View>
+
+      {/* A guest is a real account that simply has no way back into itself.
+          Saying that plainly — and offering the one-tap fix — is better than
+          a settings screen that quietly shows an empty profile. */}
+      {isGuest && (
+        <Pressable
+          testID="settings-create-account"
+          onPress={() => router.push("/auth/register")}
+          style={[
+            styles.guestCard,
+            { backgroundColor: colors.surfaceSecondary, borderColor: colors.brand },
+          ]}
+        >
+          <View style={[styles.rowIcon, { backgroundColor: colors.surfaceTertiary }]}>
+            <Ionicons name="person-add" size={16} color={colors.brand} />
+          </View>
+
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.rowLabel, { color: colors.onSurface }]}>
+              {guestCopy.cta}
+            </Text>
+            <Text style={[styles.email, { color: colors.onSurfaceTertiary }]}>
+              {guestCopy.why}
+            </Text>
+          </View>
+
+          <Ionicons name="chevron-forward" size={18} color={colors.onSurfaceTertiary} />
+        </Pressable>
+      )}
 
       <Section title={t("preferences")}>
         <Row testID="settings-language" icon="language" label={t("language")}>
@@ -78,7 +173,7 @@ export default function Settings() {
                 onPress={() => setLang(l)}
                 style={[styles.seg2Item, { backgroundColor: lang === l ? colors.brand : colors.surfaceTertiary }]}
               >
-                <Text style={{ color: lang === l ? "#fff" : colors.onSurface, fontWeight: FontWeight.semibold }}>{l.toUpperCase()}</Text>
+                <Text style={{ color: lang === l ? colors.onBrand : colors.onSurface, fontWeight: FontWeight.bold }}>{l.toUpperCase()}</Text>
               </Pressable>
             ))}
           </View>
@@ -91,7 +186,7 @@ export default function Settings() {
                 onPress={() => setPreference(k)}
                 style={[styles.seg2Item, { backgroundColor: preference === k ? colors.brand : colors.surfaceTertiary }]}
               >
-                <Text style={{ color: preference === k ? "#fff" : colors.onSurface, fontWeight: FontWeight.semibold, fontSize: FontSize.sm }}>{t(k as any)}</Text>
+                <Text style={{ color: preference === k ? colors.onBrand : colors.onSurface, fontWeight: FontWeight.bold, fontSize: FontSize.sm }}>{t(k as any)}</Text>
               </Pressable>
             ))}
           </View>
@@ -105,17 +200,30 @@ export default function Settings() {
 
       <Section title={t("account")}>
         <Row testID="settings-restore" icon="refresh" label={t("restore_purchases")} onPress={restore} />
-        <Row testID="settings-privacy" icon="shield-checkmark" label={t("privacy")} onPress={() => openLink("https://www.termsfeed.com/live/privacy-policy-example")} />
-        <Row testID="settings-terms" icon="document-text" label={t("terms")} onPress={() => openLink("https://www.termsfeed.com/live/terms-conditions-example")} />
-        <Row testID="settings-support" icon="help-circle" label={t("support")} onPress={() => openLink("mailto:support@prankfx.app")} />
+        <Row testID="settings-privacy" icon="shield-checkmark" label={t("privacy")} onPress={() => openLegal("/privacy")} />
+        <Row testID="settings-terms" icon="document-text" label={t("terms")} onPress={() => openLegal("/terms")} />
+        <Row testID="settings-support" icon="help-circle" label={t("support")} onPress={() => openLegal("/support")} />
       </Section>
 
       <Section title="">
-        <Row testID="settings-logout" icon="log-out" label={t("logout")} onPress={doLogout} color={colors.warning} />
+        {/* "Log out" of a guest session would throw away the account with no
+            way to get back in — so a guest is offered the sign-in instead. */}
+        {isGuest ? (
+          <Row
+            testID="settings-signin"
+            icon="log-in"
+            label={t("log_in")}
+            onPress={() => router.push("/auth/login")}
+          />
+        ) : (
+          <Row testID="settings-logout" icon="log-out" label={t("logout")} onPress={doLogout} color={colors.warning} />
+        )}
         <Row testID="settings-delete" icon="trash" label={t("delete_account")} onPress={doDelete} color={colors.error} />
       </Section>
 
-      <Text style={[styles.version, { color: colors.onSurfaceTertiary }]}>PrankFX • Cinematic AI Effects</Text>
+      <Text style={[styles.version, { color: colors.onSurfaceTertiary }]}>
+        PrankFX v{Constants.expoConfig?.version || "?"} · {currentUpdateLabel()}
+      </Text>
     </ScrollView>
   );
 }
@@ -152,8 +260,8 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.xl, borderRadius: Radius.lg, borderWidth: 1,
     padding: Spacing.lg, flexDirection: "row", alignItems: "center", gap: Spacing.md,
   },
-  avatar: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center" },
-  avatarText: { color: "#fff", fontSize: FontSize.xl, fontWeight: FontWeight.bold },
+  avatar: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center", borderWidth: 1.5 },
+  avatarText: { fontSize: FontSize.xl, fontWeight: FontWeight.bold },
   name: { fontSize: FontSize.lg, fontWeight: FontWeight.bold },
   email: { fontSize: FontSize.sm, marginTop: 2 },
   badge: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
@@ -174,5 +282,15 @@ const styles = StyleSheet.create({
   },
   switch: { width: 46, height: 26, borderRadius: 13, justifyContent: "center" },
   switchDot: { width: 22, height: 22, borderRadius: 11, backgroundColor: "#fff" },
+  guestCard: {
+    marginHorizontal: Spacing.xl,
+    marginTop: Spacing.lg,
+    borderRadius: Radius.lg,
+    borderWidth: 1.5,
+    padding: Spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+  },
   version: { textAlign: "center", marginTop: Spacing.xl2, fontSize: FontSize.xs },
 });

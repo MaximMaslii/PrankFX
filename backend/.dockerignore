@@ -1,0 +1,19 @@
+# Secrets never go into the image — set them as variables on the host
+.env
+.env.*
+!.env.example
+
+# Local data and caches
+media/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+venv/
+.venv/
+
+# Not needed at runtime
+tests/
+tests_unit/
+test_gemini.py
+pytest.ini
+requirements.txt

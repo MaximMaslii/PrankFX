@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
@@ -16,6 +17,13 @@ import { useTheme } from "@/src/theme/ThemeProvider";
 import { useI18n } from "@/src/i18n/I18nProvider";
 import { useAuth } from "@/src/auth/AuthProvider";
 import { FXPack, SubAPI } from "@/src/api/client";
+import {
+  buyPackage,
+  getPackages,
+  packIdForProduct,
+  purchasesAvailable,
+} from "@/src/utils/purchases";
+import type { PurchasesPackage } from "react-native-purchases";
 import { GradientButton } from "@/src/components/GradientButton";
 import { Toast } from "@/src/components/Toast";
 import {
@@ -36,7 +44,8 @@ const FALLBACK_PACKS: FXPack[] = [
 export default function PremiumScreen() {
   const { colors } = useTheme();
   const { t, lang } = useI18n();
-  const { user, refresh } = useAuth();
+  const { user, isGuest, refresh } = useAuth();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
 
   const [packs, setPacks] = useState<FXPack[]>([]);
@@ -44,6 +53,10 @@ export default function PremiumScreen() {
   const [selectedPack, setSelectedPack] = useState<string>("popular");
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
+
+  // Packages as the store itself reports them — localised prices, and proof
+  // that the product really exists in Play/App Store Connect.
+  const [storePackages, setStorePackages] = useState<PurchasesPackage[]>([]);
 
   const text = {
     en: {
@@ -58,6 +71,10 @@ export default function PremiumScreen() {
       buy: "Buy",
       buyFx: "Buy FX",
       perFx: "/ FX",
+      planKicker: "BETTER VALUE",
+      planTitle: "50 FX every week",
+      planSub: "Weekly plan · no watermark · priority processing",
+      guestNeeded: "Create an account first — a purchase has to belong to one.",
     },
     ru: {
       store: "Магазин FX",
@@ -71,6 +88,10 @@ export default function PremiumScreen() {
       buy: "Купить",
       buyFx: "Купить FX",
       perFx: "/ FX",
+      planKicker: "ВЫГОДНЕЕ",
+      planTitle: "50 FX каждую неделю",
+      planSub: "Недельная подписка · без водяного знака · без очереди",
+      guestNeeded: "Сначала создайте аккаунт — покупка должна быть к нему привязана.",
     },
     de: {
       store: "FX Store",
@@ -84,6 +105,10 @@ export default function PremiumScreen() {
       buy: "Kaufen",
       buyFx: "FX kaufen",
       perFx: "/ FX",
+      planKicker: "GÜNSTIGER",
+      planTitle: "50 FX jede Woche",
+      planSub: "Wochenabo · kein Wasserzeichen · bevorzugte Verarbeitung",
+      guestNeeded: "Erst ein Konto anlegen — ein Kauf muss zu einem gehören.",
     },
   }[lang];
 
@@ -91,13 +116,15 @@ export default function PremiumScreen() {
     try {
       setLoading(true);
 
-      const [packsResult, balanceResult] = await Promise.all([
+      const [packsResult, balanceResult, storeResult] = await Promise.all([
         SubAPI.fxPacks(),
         SubAPI.fxBalance(),
+        getPackages(),
       ]);
 
       setPacks(packsResult);
       setBalance(balanceResult.fx_credits);
+      setStorePackages(storeResult);
 
       if (
         packsResult.length > 0 &&
@@ -122,24 +149,100 @@ export default function PremiumScreen() {
     loadFX();
   }, []);
 
+  /** The store package that corresponds to one of our FX packs, if any. */
+  const storePackageFor = (packId: string) =>
+    storePackages.find(
+      (item) => packIdForProduct(item.product.identifier) === packId,
+    );
+
+  /**
+   * Wait for the balance to move after a successful payment.
+   *
+   * The credit does not come from this screen — the store tells RevenueCat,
+   * RevenueCat calls our webhook, and only then does the balance change. That
+   * round trip is usually a second or two, so the screen waits rather than
+   * showing an unchanged balance and looking like the purchase failed.
+   */
+  const waitForCredit = async (before: number): Promise<boolean> => {
+    for (let attempt = 0; attempt < 10; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      try {
+        const result = await SubAPI.fxBalance();
+
+        if (result.fx_credits > before) {
+          setBalance(result.fx_credits);
+          await refresh();
+          return true;
+        }
+      } catch {
+        // Keep waiting; a dropped poll is not a failed purchase.
+      }
+    }
+
+    return false;
+  };
+
   const purchase = async () => {
     const pack = packs.find((item) => item.id === selectedPack);
 
-    if (!pack) return;
+    if (!pack || purchasing) return;
 
-    Haptics.notificationAsync(
-      Haptics.NotificationFeedbackType.Success,
-    ).catch(() => {});
+    // A purchase made under a device-only account disappears with the app,
+    // and the person who paid has no way to prove it was theirs. So the
+    // account comes first — one tap with Google or Apple, and the FX,
+    // history and user id they already have are carried over intact.
+    if (isGuest) {
+      Toast.error(text.guestNeeded);
+      router.push({
+        pathname: "/auth/register",
+        params: { intent: "purchase" },
+      });
+      return;
+    }
+
+    const storePackage = storePackageFor(pack.id);
+
+    if (!storePackage) {
+      // No product in the store — either the build has no RevenueCat keys or
+      // the product id does not match. Never silently "grant" the pack.
+      Toast.error(t("purchase_unavailable"));
+      return;
+    }
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
 
     setPurchasing(true);
 
+    const before = balance;
+
     try {
-      const result = await SubAPI.mockFXPurchase(pack.id);
+      const outcome = await buyPackage(storePackage);
 
-      setBalance(result.fx_credits);
-      await refresh();
+      if (outcome.status === "cancelled") {
+        return;
+      }
 
-      Toast.success(`+${result.fx_added} FX`);
+      if (outcome.status === "error") {
+        Toast.error(outcome.message);
+        return;
+      }
+
+      Toast.success(t("purchase_pending"));
+
+      const credited = await waitForCredit(before);
+
+      if (credited) {
+        Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        ).catch(() => {});
+
+        Toast.success(`+${pack.fx} FX`);
+      } else {
+        // The payment went through; the webhook is just late. Nothing is
+        // lost, and saying so is better than an error the user cannot act on.
+        Toast.success(t("purchase_slow"));
+      }
     } catch (e: any) {
       Toast.error(e?.message || t("error_generic"));
     } finally {
@@ -147,7 +250,17 @@ export default function PremiumScreen() {
     }
   };
 
+  /**
+   * Whether anything can actually be bought: the SDK is configured AND the
+   * store returned at least one product matching our catalogue.
+   */
+  const storeReady = purchasesAvailable() && storePackages.length > 0;
+
+  /** Store price when the store knows it, our catalogue price otherwise. */
   const priceLabel = (price: number) => `$${price.toFixed(2)}`;
+
+  const packPrice = (pack: FXPack) =>
+    storePackageFor(pack.id)?.product.priceString ?? priceLabel(pack.price);
 
   const selected = packs.find((pack) => pack.id === selectedPack);
 
@@ -180,7 +293,7 @@ export default function PremiumScreen() {
             <Ionicons
               name="flash"
               size={28}
-              color="#fff"
+              color={colors.onBrand}
             />
           </View>
 
@@ -213,24 +326,56 @@ export default function PremiumScreen() {
             <Ionicons
               name="flash"
               size={22}
-              color="#fff"
+              color={colors.onBrand}
             />
           </View>
 
           <View style={{ flex: 1 }}>
-            <Text style={styles.balanceLabel}>
+            <Text style={[styles.balanceLabel, { color: colors.onBrand, opacity: 0.8 }]}>
               {text.balance}
             </Text>
 
-            <Text style={styles.balanceValue}>
+            <Text style={[styles.balanceValue, { color: colors.onBrand }]}>
               {loading ? "..." : balance}
             </Text>
           </View>
 
-          <Text style={styles.balanceUnit}>
+          <Text style={[styles.balanceUnit, { color: colors.onBrand }]}>
             FX
           </Text>
         </LinearGradient>
+
+        {/* The plan, first. Someone opening the FX shop is already willing
+            to pay — this is the moment to show them the offer that costs
+            less per effect and does not run out mid-prank. */}
+        {!user?.is_premium && (
+          <Pressable
+            testID="fx-plan-banner"
+            onPress={() => {
+              Haptics.selectionAsync().catch(() => {});
+              router.push({
+                pathname: "/paywall",
+                params: { reason: "premium" },
+              });
+            }}
+            style={{ marginBottom: Spacing.md }}
+          >
+            <LinearGradient
+              colors={colors.premiumGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.planBanner}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={styles.planKicker}>{text.planKicker}</Text>
+                <Text style={styles.planTitle}>{text.planTitle}</Text>
+                <Text style={styles.planSub}>{text.planSub}</Text>
+              </View>
+
+              <Ionicons name="chevron-forward" size={22} color="#fff" />
+            </LinearGradient>
+          </Pressable>
+        )}
 
         <View
           style={[
@@ -320,7 +465,12 @@ export default function PremiumScreen() {
                         },
                       ]}
                     >
-                      <Text style={styles.badgeText}>
+                      <Text
+                        style={[
+                          styles.badgeText,
+                          { color: active ? "#fff" : colors.onBrand },
+                        ]}
+                      >
                         {isPopular
                           ? text.mostPopular
                           : text.bestValue}
@@ -351,7 +501,7 @@ export default function PremiumScreen() {
                         name="flash"
                         size={24}
                         color={
-                          active ? "#fff" : colors.brand
+                          active ? colors.onBrand : colors.brand
                         }
                       />
                     </View>
@@ -362,7 +512,7 @@ export default function PremiumScreen() {
                           styles.packFX,
                           {
                             color: active
-                              ? "#fff"
+                              ? colors.onBrand
                               : colors.onSurface,
                           },
                         ]}
@@ -375,8 +525,9 @@ export default function PremiumScreen() {
                           styles.perGeneration,
                           {
                             color: active
-                              ? "rgba(255,255,255,0.80)"
+                              ? colors.onBrand
                               : colors.onSurfaceTertiary,
+                            opacity: active ? 0.75 : 1,
                           },
                         ]}
                       >
@@ -390,12 +541,12 @@ export default function PremiumScreen() {
                           styles.price,
                           {
                             color: active
-                              ? "#fff"
+                              ? colors.onBrand
                               : colors.onSurface,
                           },
                         ]}
                       >
-                        {priceLabel(pack.price)}
+                        {packPrice(pack)}
                       </Text>
 
                       <Text
@@ -403,8 +554,9 @@ export default function PremiumScreen() {
                           styles.perFX,
                           {
                             color: active
-                              ? "rgba(255,255,255,0.80)"
+                              ? colors.onBrand
                               : colors.onSurfaceTertiary,
+                            opacity: active ? 0.75 : 1,
                           },
                         ]}
                       >
@@ -444,12 +596,18 @@ export default function PremiumScreen() {
         <GradientButton
           testID="fx-purchase-cta"
           label={
-            selected
-              ? `${text.buy} ${selected.fx} FX • ${priceLabel(selected.price)}`
-              : text.buyFx
+            !storeReady
+              ? t("purchase_unavailable")
+              : selected
+                ? `${text.buy} ${selected.fx} FX • ${packPrice(selected)}`
+                : text.buyFx
           }
           onPress={purchase}
           loading={purchasing}
+          // A button that cannot buy anything should say so rather than fail
+          // on tap: this is the state on the web build, and on any build
+          // without RevenueCat keys or store products.
+          disabled={!storeReady || loading}
         />
       </View>
     </View>
@@ -516,6 +674,34 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
+  },
+
+  planBanner: {
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+
+  planKicker: {
+    color: "rgba(255,255,255,0.85)",
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.heavy,
+    letterSpacing: 1,
+  },
+
+  planTitle: {
+    color: "#fff",
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.heavy,
+    marginTop: 2,
+  },
+
+  planSub: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: FontSize.xs,
+    marginTop: 3,
   },
 
   infoBox: {

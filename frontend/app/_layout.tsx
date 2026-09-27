@@ -16,15 +16,29 @@ import {
   Text,
   View,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { useFonts } from "expo-font";
+
 import { useIconFonts } from "@/src/hooks/use-icon-fonts";
+import { AppGate } from "@/src/components/AppGate";
+import { useOtaUpdates } from "@/src/utils/otaUpdates";
 import { ThemeProvider, useTheme } from "@/src/theme/ThemeProvider";
 import { I18nProvider } from "@/src/i18n/I18nProvider";
 import { AuthProvider, useAuth } from "@/src/auth/AuthProvider";
 import { storage } from "@/src/utils/storage";
 import { ToastHost } from "@/src/components/Toast";
+import { AgeNotice } from "@/src/components/AgeNotice";
+import {
+  FontSize,
+  FontWeight,
+  Radius,
+  FontFamily,
+  Spacing,
+  Tracking,
+} from "@/src/theme/tokens";
 
 // Silence dev logs for a cleaner preview.
 LogBox.ignoreAllLogs(true);
@@ -38,10 +52,20 @@ const ONBOARDED_KEY = "prankfx.onboarded";
  * Routes reachable while signed in. Anything not listed here that a signed-in
  * user lands on gets redirected to /home.
  */
-const SIGNED_IN_ROUTES = ["(tabs)", "create", "collection"];
+const SIGNED_IN_ROUTES = ["(tabs)", "create", "collection", "paywall"];
+
+/**
+ * How long the branded loading screen is shown at minimum.
+ *
+ * It used to be five seconds — on a warm start the app was ready in a few
+ * hundred milliseconds and then sat there watching a progress bar crawl. A
+ * splash exists to hide work, not to perform it; 1.4s is enough to read the
+ * wordmark and not enough to feel held up.
+ */
+const MIN_SPLASH_MS = 1400;
 
 function RootGate() {
-  const { user, bootLoading } = useAuth();
+  const { user, bootLoading, continueAsGuest } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const navigationState = useRootNavigationState();
@@ -49,10 +73,18 @@ function RootGate() {
 
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
 
-  // Startup loading screen state.
+  // Guest sign-in: attempted once per launch. `settled` flips either way —
+  // a failure must not leave the app stuck on the splash screen with no way
+  // forward, it just means the login screen is shown instead.
+  const guestAttempted = useRef(false);
+  const [guestSettled, setGuestSettled] = useState(false);
+
+  // Startup screen state.
   const [startupVisible, setStartupVisible] = useState(true);
+  const [minElapsed, setMinElapsed] = useState(false);
   const startupProgress = useRef(new Animated.Value(0)).current;
   const startupOpacity = useRef(new Animated.Value(1)).current;
+  const logoScale = useRef(new Animated.Value(0.92)).current;
 
   // Remembers the last route we sent the user to.
   const lastRedirect = useRef<string | null>(null);
@@ -74,50 +106,82 @@ function RootGate() {
     };
   }, []);
 
-  // Startup loading animation.
-  // The progress bar runs smoothly for 3 seconds.
-  // The splash disappears only when the animation is complete
-  // AND the application is ready.
+  // Entry animation + minimum display timer.
+  //
+  // The old version hid the splash from inside the animation's completion
+  // callback, and bailed out of that callback when the app was not ready yet —
+  // so if boot took longer than the animation, nothing ever hid the splash
+  // again. Readiness and timing are now two independent flags, and the effect
+  // below reacts to whichever finishes last.
   useEffect(() => {
-    const MIN_DISPLAY_TIME = 5000;
-
-    const progressAnimation = Animated.timing(startupProgress, {
-      toValue: 1,
-      duration: MIN_DISPLAY_TIME,
-      easing: Easing.inOut(Easing.cubic),
-      useNativeDriver: false,
-    });
-
-    progressAnimation.start(({ finished }) => {
-      if (!finished) return;
-
-      const appReady = !bootLoading && onboarded !== null;
-
-      if (!appReady) {
-        // Keep the screen visible at 100% until the app is actually ready.
-        return;
-      }
-
-      Animated.timing(startupOpacity, {
-        toValue: 0,
-        duration: 350,
-        easing: Easing.out(Easing.cubic),
+    Animated.parallel([
+      Animated.timing(startupProgress, {
+        toValue: 1,
+        duration: MIN_SPLASH_MS,
+        easing: Easing.inOut(Easing.cubic),
+        useNativeDriver: false,
+      }),
+      Animated.spring(logoScale, {
+        toValue: 1,
+        speed: 6,
+        bounciness: 6,
         useNativeDriver: true,
-      }).start(({ finished: fadeFinished }) => {
-        if (fadeFinished) {
-          setStartupVisible(false);
-        }
-      });
-    });
+      }),
+    ]).start();
 
-    return () => {
-      progressAnimation.stop();
-    };
+    const timer = setTimeout(() => setMinElapsed(true), MIN_SPLASH_MS);
+
+    return () => clearTimeout(timer);
+  }, [startupProgress, logoScale]);
+
+  // ---------------------------------------------------------------
+  // No session -> become a guest.
+  //
+  // This is the change that removes the sign-up wall: the app used to send a
+  // first-time user to a registration form before it had shown them anything
+  // worth registering for. Now it quietly creates an account for them and
+  // asks for an identity later, at the point where one is actually needed.
+  // ---------------------------------------------------------------
+  useEffect(() => {
+    if (bootLoading || user || guestAttempted.current) return;
+
+    guestAttempted.current = true;
+
+    continueAsGuest()
+      .catch(() => {
+        // Backend unreachable, or guest mode disabled server-side. The gate
+        // below then falls back to the login screen, which is the honest
+        // thing to show: there is no session and we could not make one.
+      })
+      .finally(() => setGuestSettled(true));
+  }, [bootLoading, user, continueAsGuest]);
+
+  useEffect(() => {
+    // Hold the splash until we know who the user is — otherwise the login
+    // screen flashes for a moment on every cold start before the guest
+    // session lands.
+    const sessionSettled = !!user || guestSettled;
+
+    const appReady = !bootLoading && onboarded !== null && sessionSettled;
+
+    if (!startupVisible || !minElapsed || !appReady) return;
+
+    Animated.timing(startupOpacity, {
+      toValue: 0,
+      duration: 320,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) setStartupVisible(false);
+    });
   }, [
     bootLoading,
     onboarded,
+    minElapsed,
+    startupVisible,
     startupOpacity,
-    startupProgress,
+    user,
+    guestSettled,
   ]);
 
   // Re-read the flag when the user leaves onboarding.
@@ -158,14 +222,22 @@ function RootGate() {
     }
 
     if (!user) {
+      // Still creating the guest session — hold still rather than flashing
+      // the login screen and then replacing it a moment later.
+      if (!guestSettled) return;
+
       if (!inAuth) {
         go("/auth/login");
       }
       return;
     }
 
-    // Signed in: only redirect away from auth/onboarding or an unknown route.
-    if (inAuth || inOnboarding || !inSignedInArea) {
+    // A guest is signed in, but the login screen is a legitimate destination
+    // for them: it is where "create an account" leads. Everyone else gets
+    // moved off it, including a guest the moment they finish signing up.
+    const guestOnAuth = inAuth && !!user.is_guest;
+
+    if (inOnboarding || (!inSignedInArea && !guestOnAuth)) {
       go("/home");
       return;
     }
@@ -176,6 +248,7 @@ function RootGate() {
     user,
     bootLoading,
     onboarded,
+    guestSettled,
     root,
     router,
     navigationState?.key,
@@ -185,6 +258,8 @@ function RootGate() {
     <View style={{ flex: 1, backgroundColor: colors.surface }}>
       <StatusBar
         barStyle={mode === "dark" ? "light-content" : "dark-content"}
+        backgroundColor="transparent"
+        translucent
       />
 
       <Stack
@@ -197,101 +272,164 @@ function RootGate() {
         }}
       />
 
-      {/* EliMax startup loading screen */}
+      {/* Branded startup screen */}
       {startupVisible && (
         <Animated.View
           pointerEvents="auto"
           style={[
-            styles.startupOverlay,
-            {
-              opacity: startupOpacity,
-            },
+            StyleSheet.absoluteFillObject,
+            { opacity: startupOpacity, zIndex: 9999 },
           ]}
         >
-          <Image
-            source={require("../assets/images/elimax-splash.png")}
-            style={styles.startupLogo}
-            resizeMode="contain"
-          />
-
-          <View style={styles.progressTrack}>
-            <Animated.View
+          <LinearGradient
+            colors={colors.bgGradient}
+            start={{ x: 0.1, y: 0 }}
+            end={{ x: 0.9, y: 1 }}
+            style={styles.startupOverlay}
+          >
+            {/* Two soft colour washes — the whole "carnival at night" idea in
+                two views, and far cheaper than a background image. */}
+            <View
               style={[
-                styles.progressFill,
+                styles.wash,
                 {
-                  width: startupProgress.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ["0%", "100%"],
-                  }),
+                  backgroundColor: colors.violet,
+                  top: -120,
+                  left: -80,
                 },
               ]}
             />
-          </View>
+            <View
+              style={[
+                styles.wash,
+                {
+                  backgroundColor: colors.accent,
+                  bottom: -140,
+                  right: -100,
+                },
+              ]}
+            />
 
-          <Text style={styles.loadingText}>Loading...</Text>
+            <Animated.View
+              style={{
+                alignItems: "center",
+                transform: [{ scale: logoScale }],
+              }}
+            >
+              <Image
+                source={require("../assets/images/prankfx-logo.png")}
+                style={styles.startupLogo}
+                resizeMode="contain"
+              />
+
+              <Text style={[styles.wordmark, { color: colors.onSurface }]}>
+                PRANK<Text style={{ color: colors.brand }}>FX</Text>
+              </Text>
+            </Animated.View>
+
+            <View
+              style={[
+                styles.progressTrack,
+                { backgroundColor: colors.surfaceTertiary },
+              ]}
+            >
+              <Animated.View
+                style={[
+                  styles.progressFill,
+                  {
+                    backgroundColor: colors.brand,
+                    width: startupProgress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ["8%", "100%"],
+                    }),
+                  },
+                ]}
+              />
+            </View>
+          </LinearGradient>
         </Animated.View>
       )}
 
       <ToastHost />
+
+      {/* First-launch content notice. Rendered last so it sits above all. */}
+      <AgeNotice />
+
+      {/* Server-controlled: maintenance screen / "please update" screen. */}
+      <AppGate />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   startupOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "#FFFFFF",
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 9999,
+    overflow: "hidden",
+  },
+
+  wash: {
+    position: "absolute",
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    opacity: 0.18,
   },
 
   startupLogo: {
-    width: "82%",
-    maxWidth: 420,
-    height: 280,
-    marginBottom: 20,
+    width: 150,
+    height: 150,
+    marginBottom: Spacing.md,
+  },
+
+  wordmark: {
+    fontSize: FontSize.xl3,
+    fontWeight: FontWeight.heavy,
+    letterSpacing: Tracking.display,
   },
 
   progressTrack: {
-    width: "62%",
-    maxWidth: 320,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#E5E7EB",
+    position: "absolute",
+    bottom: 96,
+    width: "48%",
+    maxWidth: 260,
+    height: 4,
+    borderRadius: Radius.pill,
     overflow: "hidden",
   },
 
   progressFill: {
     height: "100%",
-    borderRadius: 3,
-    backgroundColor: "#1677FF",
-  },
-
-  loadingText: {
-    marginTop: 12,
-    fontSize: 13,
-    fontWeight: "500",
-    color: "#64748B",
-    letterSpacing: 0.4,
+    borderRadius: Radius.pill,
   },
 });
 
 export default function RootLayout() {
-  const [loaded, error] = useIconFonts();
+  const [iconsLoaded, iconsError] = useIconFonts();
+
+  // The display face for the hook headlines. Bundled, so it loads in a few
+  // milliseconds; an error simply means the system font is used instead.
+  const [displayLoaded, displayError] = useFonts({
+    [FontFamily.display]: require("../assets/fonts/Unbounded-Black.ttf"),
+  });
+
+  // Over-the-air updates: downloads a newer JS bundle in the background and
+  // applies it on the next launch. A no-op in development.
+  useOtaUpdates();
+
+  // An error counts as "done" for either font set — a missing font must
+  // never keep the app on the splash screen.
+  const loaded =
+    (iconsLoaded || !!iconsError) && (displayLoaded || !!displayError);
 
   useEffect(() => {
-    if (loaded || error) {
+    if (loaded) {
       SplashScreen.hideAsync().catch(() => { });
     }
-  }, [loaded, error]);
+  }, [loaded]);
 
-  // If the CDN is unreachable we fall through on error rather than wedging the app.
-  if (!loaded && !error) {
+  if (!loaded) {
     return null;
   }
 

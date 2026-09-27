@@ -54,7 +54,7 @@ export function BeforeAfterSlider({ beforeUri, afterUri, aspect = 1 }: Props) {
         {/* Divider + handle */}
         <View style={[styles.divider, { left: `${pos * 100}%`, backgroundColor: "#fff" }]} pointerEvents="none">
           <View style={[styles.handle, { backgroundColor: colors.brand }]}>
-            <Ionicons name="code" size={16} color="#fff" style={{ transform: [{ rotate: "90deg" }] }} />
+            <Ionicons name="code" size={16} color={colors.onBrand} style={{ transform: [{ rotate: "90deg" }] }} />
           </View>
         </View>
         {/* Labels */}

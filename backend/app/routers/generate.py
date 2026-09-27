@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.schemas.generate import GenerateIn
@@ -5,6 +7,8 @@ from app.schemas.project import ProjectFull
 from app.security.dependencies import get_current_user
 from app.services.generate_service import GenerateService
 
+
+logger = logging.getLogger("prankfx.generate")
 
 router = APIRouter(
     prefix="/api/generate",
@@ -44,4 +48,21 @@ async def generate(
         raise HTTPException(
             status_code=status.HTTP_402_PAYMENT_REQUIRED,
             detail=str(e),
+        )
+
+    except Exception:
+        # Anything thrown by the image model itself landed in the global
+        # handler as a bare 500 "Internal server error", which tells the user
+        # nothing and hides the one fact that matters to them: the credit has
+        # already been refunded by the service before the exception reached
+        # here. Say that, and log the real cause for us.
+        logger.exception("Image generation failed")
+
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=(
+                "The AI service could not process this photo. "
+                "Your FX credit has been returned — try again or pick "
+                "another effect."
+            ),
         )

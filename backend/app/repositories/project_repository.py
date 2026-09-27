@@ -70,3 +70,26 @@ class ProjectRepository:
                 "user_id": user_id,
             }
         )
+
+    @staticmethod
+    async def reassign_user(from_user_id: str, to_user_id: str):
+        """Move a guest's photo history onto the account they just signed into.
+
+        Without this, the picture someone made thirty seconds before tapping
+        "Continue with Google" would vanish at the moment they created the
+        account — which reads as the app losing their work.
+        """
+        return await db.projects.update_many(
+            {"user_id": from_user_id},
+            {"$set": {"user_id": to_user_id}},
+        )
+
+    @staticmethod
+    async def delete_for_user(user_id: str):
+        """Erase a user's whole history — used when the account is deleted.
+
+        A project document holds BOTH the original photo and the result as
+        base64, so without this the user's images outlived their owner and the
+        privacy policy's promise about deletion would not have been true.
+        """
+        return await db.projects.delete_many({"user_id": user_id})

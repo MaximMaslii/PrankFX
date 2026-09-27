@@ -6,32 +6,38 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "prankfx",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.prankfx.app",
+      "usesAppleSignIn": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Take photos to apply cinematic effects",
-        "NSPhotoLibraryUsageDescription": "Pick photos to transform with AI",
-        "NSPhotoLibraryAddUsageDescription": "Save your cinematic creations"
+        "NSCameraUsageDescription": "PrankFX uses the camera to take the photo or record the 5-second clip an effect is applied to.",
+        "NSPhotoLibraryUsageDescription": "PrankFX opens your library so you can choose a photo to apply an effect to.",
+        "NSPhotoLibraryAddUsageDescription": "PrankFX saves your finished photos and clips back to your library.",
+        "NSMicrophoneUsageDescription": "PrankFX records your voice as part of the 5-second Snap clip.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#000000"
+        "backgroundColor": "#0D0B1A"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.prankfx.app",
       "permissions": [
         "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
+      ],
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
-        "android.permission.READ_MEDIA_VIDEO",
         "android.permission.READ_MEDIA_AUDIO"
       ]
     },
@@ -52,10 +58,10 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/elimax-splash.png",
-          "imageWidth": 340,
+          "image": "./assets/images/prankfx-logo.png",
+          "imageWidth": 220,
           "resizeMode": "contain",
-          "backgroundColor": "#FFFFFF"
+          "backgroundColor": "#0D0B1A"
         }
       ],
       [
@@ -68,7 +74,9 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "PrankFX needs camera access to capture photos for AI effects."
+          "cameraPermission": "PrankFX needs camera access to capture photos for AI effects.",
+          "microphonePermission": "PrankFX records your voice with the 5-second Snap clip.",
+          "recordAudioAndroid": true
         }
       ],
       [
@@ -79,7 +87,14 @@
           "isAccessMediaLocationEnabled": false
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": false,
+          "supportsPictureInPicture": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -89,6 +104,13 @@
       "eas": {
         "projectId": "22c81c08-f238-43a0-bccb-77ea2438540b"
       }
+    },
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/22c81c08-f238-43a0-bccb-77ea2438540b",
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
     }
   }
 }

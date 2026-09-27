@@ -73,8 +73,12 @@ export default function Processing() {
       if (fxBalance.fx_credits <= 0) {
         setGenerating(false);
 
+        // The offer screen, not the FX shop. Someone who has just run out
+        // wants to know what it costs to keep going — a price list of five
+        // packs makes them do the arithmetic themselves.
         router.replace({
-          pathname: "/premium",
+          pathname: "/paywall",
+          params: { reason: "no_fx" },
         });
 
         return;
@@ -105,8 +109,11 @@ export default function Processing() {
       if (e?.status === 402) {
         setGenerating(false);
 
+        // Same destination as the pre-check above — the offer, not the
+        // subscription tab, which has no "you ran out" context at all.
         router.replace({
-          pathname: "/premium",
+          pathname: "/paywall",
+          params: { reason: "no_fx" },
         });
 
         return;
@@ -156,7 +163,7 @@ export default function Processing() {
         >
           <Text
             style={{
-              color: "#fff",
+              color: colors.onBrand,
               fontWeight: FontWeight.bold,
             }}
           >
@@ -283,10 +290,10 @@ export default function Processing() {
                 <Ionicons
                   name="sparkles"
                   size={22}
-                  color="#fff"
+                  color={colors.onBrand}
                 />
 
-                <Text style={styles.generateText}>
+                <Text style={[styles.generateText, { color: colors.onBrand }]}>
                   {t("generate")}
                 </Text>
               </LinearGradient>
